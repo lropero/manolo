@@ -1,6 +1,6 @@
 {
   "name": "manolo",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A poker monte carlo lab.",
   "main": "index.js",
   "dependencies": {
