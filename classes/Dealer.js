@@ -1,7 +1,6 @@
 const chalk = require('chalk')
 const { concatMap } = require('rxjs/operators')
 const { from } = require('rxjs')
-const { times } = require('lodash')
 
 const Deck = require('./Deck')
 
@@ -13,18 +12,18 @@ class Dealer {
     tournament.messageBus.subscribe((message) => this.processMessage({ message }))
   }
 
-  dealCards () {
-    return new Promise((resolve, reject) => {
+  dealCards (howMany = 2) {
+    return new Promise(async (resolve, reject) => {
       try {
         this.deck.shuffle()
-        times(2, async () => {
+        for (let i = 0; i < howMany; i++) {
           await this.ringActivePlayers({
             fn: async (player) => {
               const card = await this.deck.deal()
               player.receiveCard({ card })
             }
           })
-        })
+        }
         return resolve()
       } catch (error) {
         return reject(error)
@@ -43,51 +42,61 @@ class Dealer {
 
   playHand () {
     return new Promise(async (resolve, reject) => {
-      this.resetTable()
-      const { id: tableId, players, pot } = this.table
-      const { ante, blinds, logger } = this.tournament
-      const handId = this.tournament.getHandId()
-      logger(chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
-      const positions = this.getPositions()
-      logger(chalk.cyan(`Seat ${positions.button + 1} is the button`))
-      for (const [seat, player] of players.entries()) {
-        logger(chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
-      }
-      if (ante > 0) {
-        await this.ringActivePlayers({
-          fn: (player) => {
-            const chips = player.pay({ amount: ante })
-            pot.addChips({ chips, player })
-            logger(chalk.gray(`${player.name}: posts the ante ${chips}`))
-          }
-        })
+      try {
+        this.resetTable()
+        const { id: tableId, players, pot } = this.table
+        const { ante, blinds, logger } = this.tournament
+        const handId = this.tournament.getHandId()
+        logger(chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
+        const positions = this.getPositions()
+        logger(chalk.cyan(`Seat ${positions.button + 1} is the button`))
+        for (const [seat, player] of players.entries()) {
+          logger(chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
+        }
+        if (ante > 0) {
+          await this.ringActivePlayers({
+            fn: (player) => {
+              const chips = player.pay({ amount: ante })
+              pot.addChips({ chips, player })
+              logger(chalk.gray(`${player.name}: posts the ante ${chips}`))
+            }
+          })
+          // pot.normalize()
+        }
+        logger(chalk.yellow('*** HOLE CARDS ***'))
+        await this.dealCards()
+        const [smallBlind, bigBlind] = blinds
+        let chips = this.activePlayers[0].pay({ amount: smallBlind })
+        pot.addChips({ chips, player: this.activePlayers[0] })
+        logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}`))
+        chips = this.activePlayers[1].pay({ amount: bigBlind })
+        pot.addChips({ chips, player: this.activePlayers[1] })
+        logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}`))
         // pot.normalize()
+        await this.ringActivePlayers({
+          fn: async (player) => {
+            await player.decide()
+          },
+          skips: 2
+        })
+        this.ringActivePlayers({ fn: (player) => logger(player.showCards()) })
+      } catch (error) {
+        return reject(error)
       }
-      logger(chalk.yellow('*** HOLE CARDS ***'))
-      await this.dealCards()
-      const [smallBlind, bigBlind] = blinds
-      let chips = this.activePlayers[0].pay({ amount: smallBlind })
-      pot.addChips({ chips, player: this.activePlayers[0] })
-      logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}`))
-      chips = this.activePlayers[1].pay({ amount: bigBlind })
-      pot.addChips({ chips, player: this.activePlayers[1] })
-      logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}`))
-      await this.ringActivePlayers({
-        fn: async (player) => {
-          await player.decide()
-        },
-        skips: 2
-      })
-      this.ringActivePlayers({ fn: (player) => logger(player.showCards()) })
     })
   }
 
-  processMessage ({ message }) {
-    switch (message) {
-      case 'play': {
-        this.playHand()
-        break
+  async processMessage ({ message }) {
+    try {
+      switch (message) {
+        case 'play': {
+          await this.playHand()
+          break
+        }
       }
+    } catch (error) {
+      const { id: tableId } = this.table
+      this.tournament.errors.next({ error, tableId })
     }
   }
 

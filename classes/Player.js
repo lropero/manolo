@@ -8,7 +8,7 @@ class Player {
   decide () {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        console.log('decide')
+        console.log(`decide ${this.name}`)
         return resolve()
       }, 300)
     })

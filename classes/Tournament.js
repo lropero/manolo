@@ -1,20 +1,24 @@
 const arrayShuffle = require('array-shuffle')
+const chalk = require('chalk')
 const { Subject } = require('rxjs')
 const { chunk } = require('lodash')
+const { cross } = require('figures')
 
 const Player = require('./Player')
 const Table = require('./Table')
-const { isValidPlayerName } = require('../utils')
+const { errorToString, isValidPlayerName } = require('../utils')
 
 class Tournament {
   constructor ({ config, logger, players }) {
     this.ante = config.ante || 0
     this.blinds = config.blinds
+    this.errors = new Subject()
     this.handCount = 0
     this.logger = logger
     this.messageBus = new Subject()
     this.playersWaitingTable = []
     this.seatPlayers({ players, playersPerTable: config.playersPerTable })
+    this.errors.subscribe(this.handleError.bind(this))
   }
 
   static initialize ({ config = {}, logger = () => {}, playerNames = [] } = {}) {
@@ -55,6 +59,11 @@ class Tournament {
 
   getHandId () {
     return ++this.handCount
+  }
+
+  handleError ({ error, tableId }) {
+    this.logger(`${chalk.red(cross)} Table ${tableId} -> ${errorToString(error)}`)
+    process.exit(0) // ..there better be no errors! :)
   }
 
   run () {
