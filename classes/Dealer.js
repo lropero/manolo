@@ -122,6 +122,12 @@ class Dealer {
           !playerRaised && pot.normalize({ activePlayers: this.activePlayers })
         }
         pot.normalize({ activePlayers: this.activePlayers })
+        if (this.activePlayers.length > 1) {
+          await this.deck.deal() // Burn card
+          const cards = await this.deck.deal(3)
+          this.table.receiveCards({ cards })
+          logger(chalk.yellow(`*** FLOP *** [${cards.reduce((flop, card) => flop + ' ' + card.reveal(), '').trim()}]`))
+        }
         await this.ringActivePlayers({ fn: (player) => logger(`${player.name}: ${player.showCards()}`) })
       } catch (error) {
         return reject(error)

@@ -3,6 +3,7 @@ const Pot = require('./Pot')
 
 class Table {
   constructor ({ id, players, tournament }) {
+    this.cards = []
     this.id = id
     this.players = players.map((player) => {
       player.setTable({ table: this })
@@ -20,8 +21,13 @@ class Table {
     this.dealer = new Dealer({ table: this, tournament })
   }
 
+  receiveCards ({ cards }) {
+    this.cards.push(...cards)
+  }
+
   reset ({ buck }) {
     this.buck = buck
+    this.cards = []
     this.pot = new Pot()
     // this.players.discardCards()
   }

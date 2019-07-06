@@ -7,12 +7,16 @@ class Deck {
     this.shuffle()
   }
 
-  deal () {
+  deal (howMany = 1) {
     return new Promise((resolve, reject) => {
-      if (!this.cards.length) {
-        return reject(new Error('No more cards'))
+      const cards = []
+      for (let i = 0; i < howMany; i++) {
+        if (!this.cards.length) {
+          return reject(new Error('No more cards'))
+        }
+        cards.push(this.cards.shift())
       }
-      return resolve(this.cards.shift())
+      return resolve(cards.length === 1 ? cards[0] : cards)
     })
   }
 
