@@ -11,7 +11,7 @@ class Player {
       let options = [1, 3, 4]
       if (amount === 0) {
         options = [2, 4]
-      } else if (this.stack < amount) {
+      } else if (this.stack + committed <= currentBet) {
         options = [1, 3]
       }
       const random = options[Math.floor(Math.random() * options.length)]
