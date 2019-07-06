@@ -63,6 +63,9 @@ class Tournament {
 
   handleError ({ error, tableId }) {
     this.logger(`${chalk.red(cross)} Table ${tableId} -> ${errorToString(error)}`)
+    if (error.stack) {
+      this.logger(chalk.yellow(error.stack))
+    }
     process.exit(0) // ..there better be no errors! :)
   }
 

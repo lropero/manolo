@@ -1,8 +1,9 @@
 const chalk = require('chalk')
-const { concatMap } = require('rxjs/operators')
-const { from } = require('rxjs')
+const { catchError, concatMap } = require('rxjs/operators')
+const { empty, from, throwError } = require('rxjs')
 
 const Deck = require('./Deck')
+const { errorToString } = require('../utils')
 
 class Dealer {
   constructor ({ table, tournament }) {
@@ -61,7 +62,7 @@ class Dealer {
               logger(chalk.gray(`${player.name}: posts the ante ${chips}`))
             }
           })
-          // pot.normalize()
+          pot.normalize({ activePlayers: this.activePlayers })
         }
         logger(chalk.yellow('*** HOLE CARDS ***'))
         await this.dealCards()
@@ -72,14 +73,56 @@ class Dealer {
         chips = this.activePlayers[1].pay({ amount: bigBlind })
         pot.addChips({ chips, player: this.activePlayers[1] })
         logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}`))
-        // pot.normalize()
-        await this.ringActivePlayers({
-          fn: async (player) => {
-            await player.decide()
-          },
-          skips: 2
-        })
-        this.ringActivePlayers({ fn: (player) => logger(player.showCards()) })
+        let currentBet = bigBlind
+        let skipLast = false
+        let startAt = 2
+        while (!pot.isSettled()) {
+          let playerRaised = false
+          await this.ringActivePlayers({
+            fn: (player) => new Promise(async (resolve, reject) => {
+              const decision = await player.decide({ committed: pot.getCommitted({ player }), currentBet })
+              const split = decision.split(' ')
+              const option = split[0]
+              const chips = parseFloat(split[1])
+              switch (option) {
+                case 'call': {
+                  pot.addChips({ chips, player })
+                  logger(chalk.magenta(`${player.name}: calls ${pot.getLast({ player })}${player.isAllIn ? ' and is all-in' : ''}`))
+                  break
+                }
+                case 'check': {
+                  logger(chalk.magenta(`${player.name}: checks`))
+                  break
+                }
+                case 'fold': {
+                  logger(chalk.magenta(`${player.name}: folds`))
+                  this.activePlayers = this.activePlayers.filter((p) => p.name !== player.name)
+                  if (this.activePlayers.length === 1) {
+                    return reject(new Error('Break'))
+                  }
+                  break
+                }
+                case 'raise': {
+                  pot.addChips({ chips, player })
+                  currentBet = pot.getCommitted({ player })
+                  logger(chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
+                  playerRaised = true
+                  skipLast = true
+                  startAt = this.activePlayers.findIndex((p) => p.name === player.name) + 1
+                  startAt = startAt < this.activePlayers.length ? startAt : 0
+                  return reject(new Error('Break'))
+                }
+              }
+              return resolve()
+            }),
+            skipAllIn: true,
+            skipLast,
+            startAt
+          })
+          !playerRaised && pot.normalize({ activePlayers: this.activePlayers })
+        }
+        pot.normalize({ activePlayers: this.activePlayers })
+        await this.ringActivePlayers({ fn: (player) => logger(`${player.name}: ${player.showCards()}`) })
       } catch (error) {
         return reject(error)
       }
@@ -117,15 +160,19 @@ class Dealer {
     this.activePlayers = activePlayers
   }
 
-  ringActivePlayers ({ fn, skips = 0 }) {
+  ringActivePlayers ({ fn, skipAllIn = false, skipLast = false, startAt = 0 }) {
     return new Promise(async (resolve, reject) => {
       try {
-        await from(this.activePlayers.entries()).pipe(
-          concatMap(async ([position, player]) => {
-            if (position >= skips) {
-              await fn(player)
-            }
-          })
+        const activePlayers = this.activePlayers.slice()
+        for (let i = 0; i < startAt; i++) {
+          activePlayers.push(activePlayers.shift())
+        }
+        skipLast && activePlayers.pop()
+        await from(skipAllIn ? activePlayers.filter((player) => !player.isAllIn) : activePlayers).pipe(
+          concatMap(async (player) => {
+            await fn(player)
+          }),
+          catchError((error) => errorToString(error) === 'Break' ? empty() : throwError(error))
         ).toPromise()
         return resolve()
       } catch (error) {
