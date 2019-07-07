@@ -40,6 +40,10 @@ class Player {
     this.cards.push(card)
   }
 
+  receiveChips ({ chips }) {
+    this.stack += chips
+  }
+
   setTable ({ table }) {
     this.table = table
   }

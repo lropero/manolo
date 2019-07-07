@@ -31,6 +31,10 @@ class Table {
     this.pot = new Pot()
     // this.players.discardCards()
   }
+
+  showCards () {
+    return this.cards.reduce((string, card) => string + card.reveal(), '')
+  }
 }
 
 module.exports = Table

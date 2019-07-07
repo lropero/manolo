@@ -1,9 +1,11 @@
 const chalk = require('chalk')
+const { Hand } = require('pokersolver')
 const { catchError, concatMap } = require('rxjs/operators')
+const { difference } = require('lodash')
 const { empty, from, throwError } = require('rxjs')
 
 const Deck = require('./Deck')
-const { errorToString } = require('../utils')
+const { cardsToArray, errorToString } = require('../utils')
 
 class Dealer {
   constructor ({ table, tournament }) {
@@ -126,9 +128,39 @@ class Dealer {
           await this.deck.deal() // Burn card
           const cards = await this.deck.deal(3)
           this.table.receiveCards({ cards })
-          logger(chalk.yellow(`*** FLOP *** [${cards.reduce((flop, card) => flop + ' ' + card.reveal(), '').trim()}]`))
+          logger(chalk.yellow(`*** FLOP *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
+          console.log('TODO: betting round')
         }
-        await this.ringActivePlayers({ fn: (player) => logger(`${player.name}: ${player.showCards()}`) })
+        if (this.activePlayers.length > 1) {
+          await this.deck.deal() // Burn card
+          const card = await this.deck.deal()
+          this.table.receiveCards({ cards: [card] })
+          logger(chalk.yellow(`*** TURN *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
+          console.log('TODO: betting round')
+        }
+        if (this.activePlayers.length > 1) {
+          await this.deck.deal() // Burn card
+          const card = await this.deck.deal()
+          this.table.receiveCards({ cards: [card] })
+          logger(chalk.yellow(`*** RIVER *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
+          console.log('TODO: betting round')
+        }
+        logger(chalk.yellow('*** SHOW DOWN ***'))
+        const hands = []
+        await this.ringActivePlayers({ fn: (player) => {
+          const hand = Hand.solve(cardsToArray(player.showCards()).concat(cardsToArray(this.table.showCards())))
+          logger(chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
+          hands.push(hand)
+        } })
+        const winners = Hand.winners(hands).map((winner) => {
+          const cards = difference(winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').trim().split(' '), cardsToArray(this.table.showCards()))
+          return this.activePlayers.filter((player) => cardsToArray(player.showCards()).includes(cards[0]))[0]
+        })
+        chips = pot.collect() / winners.length
+        for (const player of winners) {
+          logger(chalk.green(`${player.name} collected ${chips} from pot`))
+          player.receiveChips({ chips })
+        }
       } catch (error) {
         return reject(error)
       }

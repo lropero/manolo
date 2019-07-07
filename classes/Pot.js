@@ -11,6 +11,10 @@ class Pot {
     this.puts[player.name].push(chips)
   }
 
+  collect () {
+    return this.pots.reduce((chips, pot) => chips + Object.values(pot).reduce((sum, value) => sum + value, 0), 0)
+  }
+
   getCommitted ({ player }) {
     return (this.puts[player.name] || []).reduce((committed, put) => committed + put, 0)
   }
