@@ -22,7 +22,7 @@ class Dealer {
         for (let i = 0; i < howMany; i++) {
           await this.ringActivePlayers({
             fn: async (player) => {
-              const card = await this.deck.deal()
+              const [card] = await this.deck.deal()
               player.receiveCard({ card })
             }
           })
@@ -124,26 +124,14 @@ class Dealer {
           !playerRaised && pot.normalize({ activePlayers: this.activePlayers })
         }
         pot.normalize({ activePlayers: this.activePlayers })
-        if (this.activePlayers.length > 1) {
-          await this.deck.deal() // Burn card
-          const cards = await this.deck.deal(3)
-          this.table.receiveCards({ cards })
-          logger(chalk.yellow(`*** FLOP *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
-          console.log('TODO: betting round')
-        }
-        if (this.activePlayers.length > 1) {
-          await this.deck.deal() // Burn card
-          const card = await this.deck.deal()
-          this.table.receiveCards({ cards: [card] })
-          logger(chalk.yellow(`*** TURN *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
-          console.log('TODO: betting round')
-        }
-        if (this.activePlayers.length > 1) {
-          await this.deck.deal() // Burn card
-          const card = await this.deck.deal()
-          this.table.receiveCards({ cards: [card] })
-          logger(chalk.yellow(`*** RIVER *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
-          console.log('TODO: betting round')
+        for (let i = 0; i < 3; i++) {
+          if (this.activePlayers.length > 1) {
+            await this.deck.deal() // Burn card
+            const cards = await this.deck.deal(i === 0 ? 3 : 1)
+            this.table.receiveCards({ cards })
+            logger(chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
+            console.log('TODO: betting round') // DELETE
+          }
         }
         logger(chalk.yellow('*** SHOW DOWN ***'))
         const hands = []
@@ -158,9 +146,10 @@ class Dealer {
         })
         chips = pot.collect() / winners.length
         for (const player of winners) {
-          logger(chalk.green(`${player.name} collected ${chips} from pot`))
           player.receiveChips({ chips })
+          logger(chalk.green(`${player.name} collected ${chips} from pot`))
         }
+        return resolve()
       } catch (error) {
         return reject(error)
       }

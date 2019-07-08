@@ -16,7 +16,7 @@ class Deck {
         }
         cards.push(this.cards.shift())
       }
-      return resolve(cards.length === 1 ? cards[0] : cards)
+      return resolve(cards)
     })
   }
 
