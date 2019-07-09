@@ -100,7 +100,7 @@ class Dealer {
           let playerRaised = false
           await this.ringActivePlayers({
             fn: (player) => new Promise(async (resolve, reject) => {
-              const decision = await player.decide({ currentBet })
+              const decision = await player.decide({ activePlayers: this.activePlayers, currentBet })
               const split = decision.split(' ')
               const option = split[0]
               const chips = parseFloat(split[1])

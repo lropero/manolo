@@ -5,7 +5,7 @@ class Player {
     this.stack = chips
   }
 
-  decide ({ currentBet }) {
+  decide ({ activePlayers, currentBet }) {
     return new Promise((resolve, reject) => {
       const { pot } = this.table
       const committed = pot.getCommitted({ player: this })
@@ -13,7 +13,7 @@ class Player {
       let options = [1, 3, 4]
       if (amount === 0) {
         options = [2, 4]
-      } else if (this.stack + committed <= currentBet) {
+      } else if (this.stack + committed <= currentBet || !activePlayers.filter((player) => !player.isAllIn && !player.name === this.name).length) {
         options = [1, 3]
       }
       const random = options[Math.floor(Math.random() * options.length)]
