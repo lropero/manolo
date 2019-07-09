@@ -21,15 +21,25 @@ class Table {
     this.dealer = new Dealer({ table: this, tournament })
   }
 
+  hasPlayer ({ player }) {
+    return !!this.players.find((p) => p.name === player.name)
+  }
+
   receiveCards ({ cards }) {
     this.cards.push(...cards)
+  }
+
+  removePlayer ({ player }) {
+    this.players = this.players.filter((p) => p.name !== player.name)
   }
 
   reset ({ buck }) {
     this.buck = buck
     this.cards = []
     this.pot = new Pot()
-    // this.players.discardCards()
+    for (const player of this.players) {
+      player.reset()
+    }
   }
 
   showCards () {

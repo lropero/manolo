@@ -12,7 +12,7 @@ class Dealer {
     this.deck = new Deck()
     this.table = table
     this.tournament = tournament
-    tournament.messageBus.subscribe((message) => this.processMessage({ message }))
+    tournament.messageBus.subscribe(this.processMessage.bind(this))
   }
 
   dealCards (howMany = 2) {
@@ -41,6 +41,24 @@ class Dealer {
       button: buck,
       smallBlind: players.length === 2 ? buck : buck + 1 - (buck + 1 >= players.length && players.length)
     }
+  }
+
+  play () {
+    return new Promise(async (resolve, reject) => {
+      try {
+        while (this.table.players.length > 1) {
+          await this.playHand()
+          const { players } = this.table
+          const eliminated = players.filter((player) => player.isBroke())
+          if (eliminated.length) {
+            this.tournament.messageBus.next({ message: 'eliminated', payload: eliminated })
+          }
+        }
+        return resolve()
+      } catch (error) {
+        return reject(error)
+      }
+    })
   }
 
   playHand () {
@@ -82,7 +100,7 @@ class Dealer {
           let playerRaised = false
           await this.ringActivePlayers({
             fn: (player) => new Promise(async (resolve, reject) => {
-              const decision = await player.decide({ committed: pot.getCommitted({ player }), currentBet })
+              const decision = await player.decide({ currentBet })
               const split = decision.split(' ')
               const option = split[0]
               const chips = parseFloat(split[1])
@@ -160,7 +178,7 @@ class Dealer {
     try {
       switch (message) {
         case 'play': {
-          await this.playHand()
+          await this.play()
           break
         }
       }

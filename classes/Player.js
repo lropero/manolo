@@ -5,8 +5,10 @@ class Player {
     this.stack = chips
   }
 
-  decide ({ committed, currentBet }) {
+  decide ({ currentBet }) {
     return new Promise((resolve, reject) => {
+      const { pot } = this.table
+      const committed = pot.getCommitted({ player: this })
       const amount = currentBet - committed
       let options = [1, 3, 4]
       if (amount === 0) {
@@ -22,6 +24,10 @@ class Player {
         case 4: return resolve(`raise ${this.pay({ amount: (currentBet * 2) - committed })}`)
       }
     })
+  }
+
+  isBroke () {
+    return !this.stack
   }
 
   pay ({ amount }) {
@@ -42,6 +48,13 @@ class Player {
 
   receiveChips ({ chips }) {
     this.stack += chips
+  }
+
+  reset () {
+    this.cards = []
+    if (this.isAllIn) {
+      delete this.isAllIn
+    }
   }
 
   setTable ({ table }) {

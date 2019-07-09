@@ -39,8 +39,10 @@ class Pot {
         return pot
       }, {}))
       if (Math.max(...bets) !== Math.min(...bets)) {
-        console.log('SIDE POT') // TODO
-        process.exit(0) // DELETE
+        console.log('TODO: side pot')
+        // console.log(this.pots)
+        // console.log(bets)
+        // process.exit(0)
       }
       this.puts = {}
     }

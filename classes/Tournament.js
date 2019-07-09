@@ -19,6 +19,7 @@ class Tournament {
     this.playersWaitingTable = []
     this.seatPlayers({ players, playersPerTable: config.playersPerTable })
     this.errors.subscribe(this.handleError.bind(this))
+    this.messageBus.subscribe(this.processMessage.bind(this))
   }
 
   static initialize ({ config = {}, logger = () => {}, playerNames = [] } = {}) {
@@ -61,16 +62,34 @@ class Tournament {
     return ++this.handCount
   }
 
-  handleError ({ error, tableId }) {
-    this.logger(`${chalk.red(cross)} Table ${tableId} -> ${errorToString(error)}`)
+  handleError ({ error, tableId = 0 }) {
+    this.logger(`${chalk.red(cross)} ${tableId ? 'Table ' + tableId + ' -> ' : ''}${errorToString(error)}`)
     if (error.stack) {
       this.logger(chalk.yellow(error.stack))
     }
     process.exit(0) // ..there better be no errors! :)
   }
 
+  processMessage ({ message, payload }) {
+    try {
+      switch (message) {
+        case 'eliminated': {
+          const players = payload
+          for (const player of players) {
+            const table = this.tables.filter((table) => table.hasPlayer({ player }))[0]
+            table.removePlayer({ player })
+          }
+          // TODO: reaccommodate players
+          break
+        }
+      }
+    } catch (error) {
+      this.errors.next({ error })
+    }
+  }
+
   run () {
-    this.messageBus.next('play')
+    this.messageBus.next({ message: 'play' })
   }
 
   seatPlayers ({ players, playersPerTable }) {
