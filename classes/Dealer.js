@@ -89,7 +89,7 @@ class Dealer {
         await this.dealCards()
         const [smallBlind, bigBlind] = blinds
         let chips
-        let currentBet
+        let currentBet = 0
         if (!this.activePlayers[0].isAllIn) {
           chips = this.activePlayers[0].pay({ amount: smallBlind })
           currentBet = chips
