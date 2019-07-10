@@ -89,17 +89,24 @@ class Dealer {
         await this.dealCards()
         const [smallBlind, bigBlind] = blinds
         let chips
+        let currentBet
         if (!this.activePlayers[0].isAllIn) {
           chips = this.activePlayers[0].pay({ amount: smallBlind })
+          currentBet = chips
           pot.addChips({ chips, player: this.activePlayers[0] })
           logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}${this.activePlayers[0].isAllIn ? ' and is all-in' : ''}`))
         }
         if (!this.activePlayers[1].isAllIn) {
           chips = this.activePlayers[1].pay({ amount: bigBlind })
+          currentBet = chips > currentBet ? chips : currentBet
           pot.addChips({ chips, player: this.activePlayers[1] })
           logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}${this.activePlayers[1].isAllIn ? ' and is all-in' : ''}`))
         }
-        let currentBet = bigBlind
+        if (this.activePlayers.length === 2 && (this.activePlayers[0].isAllIn || this.activePlayers[1].isAllIn)) {
+          if (this.activePlayers[0].isAllIn || currentBet <= pot.getLast({ player: this.activePlayers[0] })) {
+            pot.normalize({ activePlayers: this.activePlayers })
+          }
+        }
         let skipLast = false
         let startAt = 2
         while (!pot.isSettled()) {
@@ -114,6 +121,9 @@ class Dealer {
                 case 'call': {
                   pot.addChips({ chips, player })
                   logger(chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+                  if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
+                    return reject(new Error('Break'))
+                  }
                   break
                 }
                 case 'check': {
@@ -154,7 +164,7 @@ class Dealer {
             const cards = await this.deck.deal(i === 0 ? 3 : 1)
             this.table.receiveCards({ cards })
             logger(chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
-            console.log('TODO: betting round') // DELETE
+            // TODO: betting round
           }
         }
         logger(chalk.yellow('*** SHOW DOWN ***'))
@@ -238,7 +248,9 @@ class Dealer {
         skipLast && activePlayers.pop()
         await from(skipAllIn ? activePlayers.filter((player) => !player.isAllIn) : activePlayers).pipe(
           concatMap(async (player) => {
-            await fn(player)
+            if (!skipAllIn || (skipAllIn && !player.isAllIn)) {
+              await fn(player)
+            }
           }),
           catchError((error) => errorToString(error) === 'Break' ? empty() : throwError(error))
         ).toPromise()

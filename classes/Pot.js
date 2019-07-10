@@ -19,6 +19,11 @@ class Pot {
     return (this.puts[player.name] || []).reduce((committed, put) => committed + put, 0)
   }
 
+  getLast ({ player }) {
+    const puts = this.puts[player.name] || []
+    return puts.length && puts[puts.length - 1]
+  }
+
   isSettled () {
     return !Object.keys(this.puts).length
   }
@@ -34,7 +39,7 @@ class Pot {
         return pot
       }, {}))
       if (Math.max(...bets) !== Math.min(...bets)) {
-        console.log('TODO: side pot')
+        // TODO: side pot
         // console.log(this.pots)
         // console.log(bets)
         // process.exit(0)
