@@ -19,11 +19,6 @@ class Pot {
     return (this.puts[player.name] || []).reduce((committed, put) => committed + put, 0)
   }
 
-  getLast ({ player }) {
-    const puts = this.puts[player.name] || []
-    return puts.length && puts[puts.length - 1]
-  }
-
   isSettled () {
     return !Object.keys(this.puts).length
   }

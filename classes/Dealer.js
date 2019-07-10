@@ -1,4 +1,5 @@
 const chalk = require('chalk')
+const gradient = require('gradient-string')
 const { Hand } = require('pokersolver')
 const { catchError, concatMap } = require('rxjs/operators')
 const { difference } = require('lodash')
@@ -54,7 +55,7 @@ class Dealer {
             this.tournament.messageBus.next({ message: 'eliminated', payload: eliminated })
           }
         }
-        return resolve()
+        return resolve(this.table.players[0])
       } catch (error) {
         return reject(error)
       }
@@ -79,7 +80,7 @@ class Dealer {
             fn: (player) => {
               const chips = player.pay({ amount: ante })
               pot.addChips({ chips, player })
-              logger(chalk.gray(`${player.name}: posts the ante ${chips}`))
+              logger(chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
             }
           })
           pot.normalize({ activePlayers: this.activePlayers })
@@ -87,12 +88,17 @@ class Dealer {
         logger(chalk.yellow('*** HOLE CARDS ***'))
         await this.dealCards()
         const [smallBlind, bigBlind] = blinds
-        let chips = this.activePlayers[0].pay({ amount: smallBlind })
-        pot.addChips({ chips, player: this.activePlayers[0] })
-        logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}`))
-        chips = this.activePlayers[1].pay({ amount: bigBlind })
-        pot.addChips({ chips, player: this.activePlayers[1] })
-        logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}`))
+        let chips
+        if (!this.activePlayers[0].isAllIn) {
+          chips = this.activePlayers[0].pay({ amount: smallBlind })
+          pot.addChips({ chips, player: this.activePlayers[0] })
+          logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}${this.activePlayers[0].isAllIn ? ' and is all-in' : ''}`))
+        }
+        if (!this.activePlayers[1].isAllIn) {
+          chips = this.activePlayers[1].pay({ amount: bigBlind })
+          pot.addChips({ chips, player: this.activePlayers[1] })
+          logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}${this.activePlayers[1].isAllIn ? ' and is all-in' : ''}`))
+        }
         let currentBet = bigBlind
         let skipLast = false
         let startAt = 2
@@ -107,7 +113,7 @@ class Dealer {
               switch (option) {
                 case 'call': {
                   pot.addChips({ chips, player })
-                  logger(chalk.magenta(`${player.name}: calls ${pot.getLast({ player })}${player.isAllIn ? ' and is all-in' : ''}`))
+                  logger(chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
                   break
                 }
                 case 'check': {
@@ -162,10 +168,26 @@ class Dealer {
           const cards = difference(winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').trim().split(' '), cardsToArray(this.table.showCards()))
           return this.activePlayers.filter((player) => cardsToArray(player.showCards()).includes(cards[0]))[0]
         })
-        chips = pot.collect() / winners.length
-        for (const player of winners) {
-          player.receiveChips({ chips })
-          logger(chalk.green(`${player.name} collected ${chips} from pot`))
+        const collected = pot.collect()
+        chips = Math.floor(collected / winners.length)
+        if (winners.length > 1) {
+          let remainder = 0
+          let winner
+          if (chips * winners.length !== collected) {
+            remainder = collected - chips * winners.length
+            winner = Math.floor(Math.random() * winners.length)
+          }
+          for (const [index, player] of winners.entries()) {
+            let amount = chips
+            if (remainder > 0 && index === winner) {
+              amount += remainder
+            }
+            player.receiveChips({ chips: amount })
+            logger(chalk.green(`${player.name} collected ${amount} from pot`))
+          }
+        } else {
+          winners[0].receiveChips({ chips })
+          logger(chalk.green(`${winners[0].name} collected ${chips} from pot`))
         }
         return resolve()
       } catch (error) {
@@ -178,7 +200,8 @@ class Dealer {
     try {
       switch (message) {
         case 'play': {
-          await this.play()
+          const winner = await this.play()
+          console.log(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
           break
         }
       }

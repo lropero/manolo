@@ -19,7 +19,7 @@ const run = async ({ config, logger, playerNames }) => {
 
 const config = {
   ante: 5,
-  blinds: [50, 100],
+  blinds: [500, 1000],
   playersPerTable: 9,
   startingChips: 10000
 }
