@@ -17,7 +17,7 @@ class Dealer {
   }
 
   dealCards (howMany = 2) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         this.deck.shuffle()
         for (let i = 0; i < howMany; i++) {
@@ -45,7 +45,7 @@ class Dealer {
   }
 
   play () {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         while (this.table.players.length > 1) {
           await this.playHand()
@@ -63,7 +63,7 @@ class Dealer {
   }
 
   playHand () {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         this.resetTable()
         const { id: tableId, players, pot } = this.table
@@ -112,7 +112,7 @@ class Dealer {
         while (!pot.isSettled()) {
           let playerRaised = false
           await this.ringActivePlayers({
-            fn: (player) => new Promise(async (resolve, reject) => {
+            fn: (player) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
               const decision = await player.decide({ activePlayers: this.activePlayers, currentBet })
               const split = decision.split(' ')
               const option = split[0]
@@ -239,7 +239,7 @@ class Dealer {
   }
 
   ringActivePlayers ({ fn, skipAllIn = false, skipLast = false, startAt = 0 }) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
       try {
         const activePlayers = this.activePlayers.slice()
         for (let i = 0; i < startAt; i++) {

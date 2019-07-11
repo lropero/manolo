@@ -15,15 +15,15 @@
   },
   "devDependencies": {
     "rimraf": "^2.6.3",
-    "standard": "^12.0.1"
+    "standard": "^13.0.0"
   },
   "scripts": {
     "clean": "rimraf ./yarn.lock && rimraf ./yarn-*.log && yarn cache clean",
     "init": "rimraf ./node_modules && yarn",
-    "lint": "standard --fix",
+    "lint": "npx standard --fix",
     "nuke": "yarn run clean && yarn run init",
     "start": "node index.js",
-    "test": "standard",
+    "test": "npx standard",
     "upgrade": "npx upgradeps"
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
