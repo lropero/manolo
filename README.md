@@ -3,7 +3,7 @@
 
 ### Requires
 - Node v10.16.0
-- Yarn v1.16.0
+- Yarn v1.17.3
 
 ### Installation
 ```sh
@@ -14,3 +14,5 @@ $ yarn
 ```sh
 $ yarn run start
 ```
+
+>Want to train a Machine Learning model using Manolo? Sure, I'm on the same boat, [drop me an email](mailto:lropero@gmail.com) and I'll be willing to help.

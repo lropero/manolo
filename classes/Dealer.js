@@ -83,7 +83,7 @@ class Dealer {
               logger(chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
             }
           })
-          pot.normalize({ activePlayers: this.activePlayers })
+          pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
         }
         logger(chalk.yellow('*** HOLE CARDS ***'))
         await this.dealCards()
@@ -102,9 +102,11 @@ class Dealer {
           pot.addChips({ chips, player: this.activePlayers[1] })
           logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}${this.activePlayers[1].isAllIn ? ' and is all-in' : ''}`))
         }
-        if (this.activePlayers.length === 2 && (this.activePlayers[0].isAllIn || this.activePlayers[1].isAllIn)) {
+        if (this.activePlayers.length > 2) {
+          currentBet = bigBlind
+        } else if (this.activePlayers[0].isAllIn || this.activePlayers[1].isAllIn) {
           if (this.activePlayers[0].isAllIn || currentBet <= pot.getLast({ player: this.activePlayers[0] })) {
-            pot.normalize({ activePlayers: this.activePlayers })
+            pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
           }
         }
         let skipLast = false
@@ -113,51 +115,64 @@ class Dealer {
           let playerRaised = false
           await this.ringActivePlayers({
             fn: (player) => new Promise(async (resolve, reject) => { // eslint-disable-line no-async-promise-executor
-              const decision = await player.decide({ activePlayers: this.activePlayers, currentBet })
-              const split = decision.split(' ')
-              const option = split[0]
-              const chips = parseFloat(split[1])
-              switch (option) {
-                case 'call': {
-                  pot.addChips({ chips, player })
-                  logger(chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
-                  if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
+              try {
+                const decision = await player.decide({ activePlayers: this.activePlayers, currentBet })
+                const split = decision.split(' ')
+                const option = split[0]
+                const chips = parseFloat(split[1])
+                switch (option) {
+                  case 'call': {
+                    pot.addChips({ chips, player })
+                    logger(chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+                    if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
+                      return reject(new Error('Break'))
+                    }
+                    break
+                  }
+                  case 'check': {
+                    logger(chalk.magenta(`${player.name}: checks`))
+                    break
+                  }
+                  case 'fold': {
+                    logger(chalk.magenta(`${player.name}: folds`))
+                    this.activePlayers = this.activePlayers.filter((p) => p.name !== player.name)
+                    if (this.activePlayers.length === 1) {
+                      return reject(new Error('Break'))
+                    } else if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
+                      const maxBetFromAllInPlayers = this.activePlayers.filter((player) => player.isAllIn).reduce((maxBetFromAllInPlayers, player) => {
+                        const committed = pot.getCommitted({ player })
+                        return committed > maxBetFromAllInPlayers ? committed : maxBetFromAllInPlayers
+                      }, 0)
+                      const remainingPlayer = this.activePlayers.find((player) => !player.isAllIn)
+                      if (pot.getCommitted({ player: remainingPlayer }) >= maxBetFromAllInPlayers) {
+                        return reject(new Error('Break'))
+                      }
+                    }
+                    break
+                  }
+                  case 'raise': {
+                    pot.addChips({ chips, player })
+                    currentBet = pot.getCommitted({ player })
+                    logger(chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
+                    playerRaised = true
+                    skipLast = true
+                    startAt = this.activePlayers.findIndex((p) => p.name === player.name) + 1
+                    startAt = startAt < this.activePlayers.length ? startAt : 0
                     return reject(new Error('Break'))
                   }
-                  break
                 }
-                case 'check': {
-                  logger(chalk.magenta(`${player.name}: checks`))
-                  break
-                }
-                case 'fold': {
-                  logger(chalk.magenta(`${player.name}: folds`))
-                  this.activePlayers = this.activePlayers.filter((p) => p.name !== player.name)
-                  if (this.activePlayers.length === 1) {
-                    return reject(new Error('Break'))
-                  }
-                  break
-                }
-                case 'raise': {
-                  pot.addChips({ chips, player })
-                  currentBet = pot.getCommitted({ player })
-                  logger(chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
-                  playerRaised = true
-                  skipLast = true
-                  startAt = this.activePlayers.findIndex((p) => p.name === player.name) + 1
-                  startAt = startAt < this.activePlayers.length ? startAt : 0
-                  return reject(new Error('Break'))
-                }
+                return resolve()
+              } catch (error) {
+                return reject(error)
               }
-              return resolve()
             }),
             skipAllIn: true,
             skipLast,
             startAt
           })
-          !playerRaised && pot.normalize({ activePlayers: this.activePlayers })
+          !playerRaised && pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
         }
-        pot.normalize({ activePlayers: this.activePlayers })
+        pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
         for (let i = 0; i < 3; i++) {
           if (this.activePlayers.length > 1) {
             await this.deck.deal() // Burn card
@@ -168,36 +183,23 @@ class Dealer {
           }
         }
         logger(chalk.yellow('*** SHOW DOWN ***'))
-        const hands = []
+        const hands = {}
         await this.ringActivePlayers({ fn: (player) => {
           const hand = Hand.solve(cardsToArray(player.showCards()).concat(cardsToArray(this.table.showCards())))
           logger(chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
-          hands.push(hand)
+          hands[player.name] = hand
         } })
-        const winners = Hand.winners(hands).map((winner) => {
-          const cards = difference(winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').trim().split(' '), cardsToArray(this.table.showCards()))
-          return this.activePlayers.filter((player) => cardsToArray(player.showCards()).includes(cards[0]))[0]
+        const winners = pot.getPlayerNamesPerPot().map((playerNames) => {
+          const handsPerPot = Object.keys(hands).filter((playerName) => playerNames.includes(playerName)).map((playerName) => hands[playerName])
+          return Hand.winners(handsPerPot).map((winner) => {
+            const cards = difference(winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').trim().split(' '), cardsToArray(this.table.showCards()))
+            return this.activePlayers.filter((player) => cardsToArray(player.showCards()).includes(cards[0]))[0]
+          }).map((player) => player.name)
         })
-        const collected = pot.collect()
-        chips = Math.floor(collected / winners.length)
-        if (winners.length > 1) {
-          let remainder = 0
-          let winner
-          if (chips * winners.length !== collected) {
-            remainder = collected - chips * winners.length
-            winner = Math.floor(Math.random() * winners.length)
-          }
-          for (const [index, player] of winners.entries()) {
-            let amount = chips
-            if (remainder > 0 && index === winner) {
-              amount += remainder
-            }
-            player.receiveChips({ chips: amount })
-            logger(chalk.green(`${player.name} collected ${amount} from pot`))
-          }
-        } else {
-          winners[0].receiveChips({ chips })
-          logger(chalk.green(`${winners[0].name} collected ${chips} from pot`))
+        const collected = pot.collect({ winners })
+        for (const player of this.activePlayers.filter((player) => Object.keys(collected).includes(player.name))) {
+          player.receiveChips({ chips: collected[player.name] })
+          logger(chalk.green(`${player.name} collected ${collected[player.name]} from pot`))
         }
         return resolve()
       } catch (error) {

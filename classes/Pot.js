@@ -11,8 +11,25 @@ class Pot {
     this.puts[player.name].push(chips)
   }
 
-  collect () {
-    return this.pots.reduce((chips, pot) => chips + Object.values(pot).reduce((sum, value) => sum + value, 0), 0)
+  collect ({ winners }) {
+    return winners.reduce((collected, playerNames, index) => {
+      const chips = Object.values(this.pots[index]).reduce((sum, value) => sum + value, 0)
+      const each = Math.floor(chips / playerNames.length)
+      let remainder = 0
+      let winnerIndex
+      if (each * playerNames.length !== chips) {
+        remainder = chips - each * playerNames.length
+        winnerIndex = Math.floor(Math.random() * playerNames.length)
+      }
+      for (const [index, playerName] of playerNames.entries()) {
+        let amount = each
+        if (remainder > 0 && index === winnerIndex) {
+          amount += remainder
+        }
+        collected[playerName] = (collected[playerName] || 0) + amount
+      }
+      return collected
+    }, {})
   }
 
   getCommitted ({ player }) {
@@ -24,25 +41,43 @@ class Pot {
     return puts.length && puts[puts.length - 1]
   }
 
+  getPlayerNamesPerPot () {
+    return this.pots.reduce((playerNamesPerPot, pot) => {
+      playerNamesPerPot.push(Object.keys(pot))
+      return playerNamesPerPot
+    }, [])
+  }
+
   isSettled () {
     return !Object.keys(this.puts).length
   }
 
-  normalize ({ activePlayers }) {
+  normalize ({ activePlayerNames }) {
     if (!this.isSettled()) {
-      this.pots.push(Object.keys(this.puts).reduce((pot, playerName) => {
+      const currentPot = Object.keys(this.puts).reduce((pot, playerName) => {
         pot[playerName] = this.getCommitted({ player: { name: playerName } })
         return pot
+      }, {})
+      this.pots.push(currentPot)
+      const bets = Object.values(activePlayerNames.reduce((activePlayersPot, playerName) => {
+        if (currentPot[playerName]) {
+          activePlayersPot[playerName] = currentPot[playerName]
+        }
+        return activePlayersPot
       }, {}))
-      const bets = Object.values(activePlayers.map((player) => player.name).reduce((pot, playerName) => {
-        pot[playerName] = this.pots[this.pots.length - 1][playerName]
-        return pot
-      }, {}))
-      if (Math.max(...bets) !== Math.min(...bets)) {
-        // TODO: side pot
-        // console.log(this.pots)
-        // console.log(bets)
-        // process.exit(0)
+      const min = Math.min(...bets)
+      if (Math.max(...bets) !== min) { // Sidepot required
+        this.pots[this.pots.length - 1] = Object.keys(currentPot).reduce((newPot, playerName) => {
+          newPot[playerName] = currentPot[playerName] < min ? currentPot[playerName] : min
+          return newPot
+        }, {})
+        this.pots.push(Object.keys(currentPot).reduce((sidePot, playerName) => {
+          const newBet = currentPot[playerName] - this.pots[this.pots.length - 1][playerName]
+          if (newBet > 0) {
+            sidePot[playerName] = newBet
+          }
+          return sidePot
+        }, {}))
       }
       this.puts = {}
     }

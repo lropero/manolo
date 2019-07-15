@@ -76,7 +76,7 @@ class Tournament {
         case 'eliminated': {
           const players = payload
           for (const player of players) {
-            const table = this.tables.filter((table) => table.hasPlayer({ player }))[0]
+            const table = this.tables.find((table) => table.hasPlayer({ player }))
             table.removePlayer({ player })
           }
           // TODO: reaccommodate players
