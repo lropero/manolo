@@ -8,16 +8,14 @@ class Deck {
   }
 
   deal (howMany = 1) {
-    return new Promise((resolve, reject) => {
-      const cards = []
-      for (let i = 0; i < howMany; i++) {
-        if (!this.cards.length) {
-          return reject(new Error('No more cards'))
-        }
-        cards.push(this.cards.shift())
+    const cards = []
+    for (let i = 0; i < howMany; i++) {
+      if (!this.cards.length) {
+        throw new Error('No more cards')
       }
-      return resolve(cards)
-    })
+      cards.push(this.cards.shift())
+    }
+    return cards
   }
 
   shuffle () {

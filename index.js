@@ -13,7 +13,7 @@ const run = async ({ config, logger, playerNames }) => {
     if (error.stack) {
       logger(chalk.yellow(error.stack))
     }
-    process.exit(0)
+    process.exit(1)
   }
 }
 

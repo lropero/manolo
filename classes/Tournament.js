@@ -67,7 +67,7 @@ class Tournament {
     if (error.stack) {
       this.logger(chalk.yellow(error.stack))
     }
-    process.exit(0) // ..there better be no errors! :)
+    process.exit(1) // ..there better be no errors! :)
   }
 
   processMessage ({ message, payload }) {
