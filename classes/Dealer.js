@@ -37,10 +37,11 @@ class Dealer {
 
   getPositions () {
     const { buck, players } = this.table
+    const isHeadsUp = players.length === 2
     return {
-      bigBlind: players.length === 2 ? 1 - buck : buck + 2 - (buck + 2 >= players.length && players.length),
+      bigBlind: isHeadsUp ? 1 - buck : buck + 2 - (buck + 2 >= players.length && players.length),
       button: buck,
-      smallBlind: players.length === 2 ? buck : buck + 1 - (buck + 1 >= players.length && players.length)
+      smallBlind: isHeadsUp ? buck : buck + 1 - (buck + 1 >= players.length && players.length)
     }
   }
 
@@ -90,27 +91,27 @@ class Dealer {
         const [smallBlind, bigBlind] = blinds
         let chips
         let currentBet = 0
-        if (!this.activePlayers[0].isAllIn) {
-          chips = this.activePlayers[0].pay({ amount: smallBlind })
+        if (!players[positions.smallBlind].isAllIn) {
+          chips = players[positions.smallBlind].pay({ amount: smallBlind })
           currentBet = chips
-          pot.addChips({ chips, player: this.activePlayers[0] })
-          logger(chalk.gray(`${this.activePlayers[0].name}: posts small blind ${chips}${this.activePlayers[0].isAllIn ? ' and is all-in' : ''}`))
+          pot.addChips({ chips, player: players[positions.smallBlind] })
+          logger(chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
         }
-        if (!this.activePlayers[1].isAllIn) {
-          chips = this.activePlayers[1].pay({ amount: bigBlind })
+        if (!players[positions.bigBlind].isAllIn) {
+          chips = players[positions.bigBlind].pay({ amount: bigBlind })
           currentBet = chips > currentBet ? chips : currentBet
-          pot.addChips({ chips, player: this.activePlayers[1] })
-          logger(chalk.gray(`${this.activePlayers[1].name}: posts big blind ${chips}${this.activePlayers[1].isAllIn ? ' and is all-in' : ''}`))
+          pot.addChips({ chips, player: players[positions.bigBlind] })
+          logger(chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
         }
-        if (this.activePlayers.length > 2) {
+        if (players.length > 2) {
           currentBet = bigBlind
-        } else if (this.activePlayers[0].isAllIn || this.activePlayers[1].isAllIn) {
-          if (this.activePlayers[0].isAllIn || currentBet <= pot.getLast({ player: this.activePlayers[0] })) {
+        } else if (players[positions.smallBlind].isAllIn || players[positions.bigBlind].isAllIn) {
+          if (players[positions.smallBlind].isAllIn || currentBet <= pot.getLast({ player: players[positions.smallBlind] })) {
             pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
           }
         }
         let skipLast = false
-        let startAt = 2
+        let startAt = players.length === 2 ? 1 : 2
         while (!pot.isSettled()) {
           let playerRaised = false
           await this.ringActivePlayers({
