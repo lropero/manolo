@@ -1,11 +1,11 @@
 const cardsToArray = require('./cardsToArray')
 const errorToString = require('./errorToString')
-const identify = require('./identify')
+const identifyTable = require('./identifyTable')
 const isValidPlayerName = require('./isValidPlayerName')
 
 module.exports = {
   cardsToArray,
   errorToString,
-  identify,
+  identifyTable,
   isValidPlayerName
 }

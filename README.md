@@ -15,4 +15,4 @@ $ yarn
 $ yarn run start
 ```
 
->Want to train a Machine Learning model using Manolo? Sure, I'm on the same boat, [drop me an email](mailto:lropero@gmail.com) and I'll be willing to help.
+>Want to train Machine Learning models using Manolo? Sure, I'm on the same boat, [drop me an email](mailto:lropero@gmail.com) and I'll be willing to help.
