@@ -20,10 +20,10 @@
   "scripts": {
     "clean": "rimraf ./yarn.lock && rimraf ./yarn-*.log && yarn cache clean",
     "init": "rimraf ./node_modules && yarn",
-    "lint": "npx standard --fix",
+    "lint": "standard --fix",
     "nuke": "yarn run clean && yarn run init",
     "start": "node --max-old-space-size=4096 index.js",
-    "test": "npx standard",
+    "test": "standard",
     "upgrade": "npx upgradeps"
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
