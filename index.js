@@ -9,7 +9,7 @@ const run = async ({ config, logger, playerNames }) => {
     const tournament = await Tournament.initialize({ config, logger, playerNames })
     tournament.run()
   } catch (error) {
-    logger(`${chalk.red(cross)} ${errorToString(error)}`)
+    logger(`${chalk.red(cross)} ${errorToString({ error })}`)
     if (error.stack) {
       logger(chalk.yellow(error.stack))
     }
@@ -24,5 +24,5 @@ const config = {
   startingChips: 10000
 }
 const logger = console.log // Winston?
-const playerNames = ['player1', 'player2', 'player3', 'player4', 'player5', 'player6', 'player7', 'player8', 'player9']
+const playerNames = new Array(27).fill('').map((player, index) => `player${index + 1}`)
 run({ config, logger, playerNames })

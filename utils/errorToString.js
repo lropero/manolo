@@ -1,4 +1,4 @@
-function errorToString (error) {
+function errorToString ({ error }) {
   if (!(error instanceof Error)) {
     error = new Error(error.toString())
   }

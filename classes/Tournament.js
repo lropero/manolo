@@ -12,12 +12,15 @@ class Tournament {
   constructor ({ config, logger, players }) {
     this.ante = config.ante || 0
     this.blinds = config.blinds
+    this.config = config
     this.errors = new Subject()
     this.handCount = 0
+    this.lastTableId = 0
     this.logger = logger
     this.messageBus = new Subject()
     this.playersWaitingTable = []
-    this.seatPlayers({ players, playersPerTable: config.playersPerTable })
+    this.tables = []
+    this.seatPlayers({ players })
     this.errors.subscribe(this.handleError.bind(this))
     this.messageBus.subscribe(this.processMessage.bind(this))
   }
@@ -42,7 +45,7 @@ class Tournament {
           throw new Error('Tournament requires a minimum of 2 players')
         }
         for (const [index, playerName] of playerNames.entries()) {
-          if (!isValidPlayerName(playerName)) {
+          if (!isValidPlayerName({ playerName })) {
             throw new Error(`Player ${index + 1} (${playerName}) has invalid player name`)
           }
           if (playerNames.reduce((count, name) => count + (name === playerName), 0) > 1) {
@@ -63,23 +66,45 @@ class Tournament {
   }
 
   handleError ({ error, tableId = 0 }) {
-    this.logger(`${chalk.red(cross)} ${tableId ? 'Table ' + tableId + ' -> ' : ''}${errorToString(error)}`)
+    this.logger(`${chalk.red(cross)} ${tableId ? 'Table ' + tableId + ' -> ' : ''}${errorToString({ error })}`)
     if (error.stack) {
       this.logger(chalk.yellow(error.stack))
     }
     process.exit(1) // ..there better be no errors! :)
   }
 
-  processMessage ({ message, payload }) {
+  pause ({ tableId }) {
+    return new Promise((resolve, reject) => {
+      const paused = [tableId]
+      this.pausing = new Subject()
+      this.subscription = this.pausing.subscribe((tableId) => {
+        paused.push(tableId)
+        if (paused.length === this.tables.length) {
+          this.subscription.unsubscribe()
+          delete this.pausing
+          return resolve(paused)
+        }
+      })
+      this.messageBus.next({ message: 'pause' })
+    })
+  }
+
+  async processMessage ({ message, payload }) {
     try {
       switch (message) {
         case 'eliminated': {
-          const players = payload
+          const { pausing, players, tableId } = payload
           for (const player of players) {
-            const table = this.tables.find((table) => table.hasPlayer({ player }))
-            table.removePlayer({ player })
+            this.tables.find((table) => table.id === tableId).removePlayer({ playerName: player.name })
           }
-          // TODO: reaccommodate players
+          if (!pausing) {
+            await this.reaccommodateTables({ tableId })
+          }
+          break
+        }
+        case 'paused': {
+          const { tableId } = payload
+          this.pausing.next(tableId)
           break
         }
       }
@@ -88,25 +113,74 @@ class Tournament {
     }
   }
 
+  async reaccommodateTables ({ tableId }) {
+    if (this.tables.length > 1) {
+      await this.pause({ tableId })
+      const players = [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable)
+      const freeSeats = (this.tables.length * this.config.playersPerTable) - players.length
+      if (freeSeats > this.config.playersPerTable) {
+        const smallestTable = this.tables.reduce((smallestTable, table) => {
+          if (table.players.length < smallestTable.players.length) {
+            return table
+          }
+          return smallestTable
+        })
+        for (const player of smallestTable.players.concat(this.playersWaitingTable)) {
+          const restOfTablesWithOpenSeats = this.tables.filter((table) => table.id !== smallestTable.id && table.players.length < this.config.playersPerTable)
+          const table = restOfTablesWithOpenSeats[Math.floor(Math.random() * restOfTablesWithOpenSeats.length)]
+          if (table) {
+            table.addPlayer({ player })
+          } else if (!this.playersWaitingTable.find((p) => p.name === player.name)) {
+            this.playersWaitingTable.push(player)
+          }
+        }
+        const seated = [].concat(...this.tables.map((table) => table.players)).map((player) => player.name)
+        this.playersWaitingTable = this.playersWaitingTable.filter((player) => !seated.includes(player.name))
+        smallestTable.break()
+        this.tables = this.tables.filter((table) => table.id !== smallestTable.id)
+      }
+      const tablesWithOnePlayer = this.tables.filter((table) => table.players.length === 1)
+      for (const tableWithOnePlayer of tablesWithOnePlayer) {
+        this.playersWaitingTable.push(tableWithOnePlayer.players[0])
+        tableWithOnePlayer.break()
+        this.tables = this.tables.filter((table) => table.id !== tableWithOnePlayer.id)
+      }
+    }
+    if (this.playersWaitingTable.length) {
+      let tableWithFreeSeat = this.tables.find((table) => table.players.length < this.config.playersPerTable)
+      while (tableWithFreeSeat && this.playersWaitingTable.length) {
+        tableWithFreeSeat.addPlayer({ player: this.playersWaitingTable.pop() })
+        tableWithFreeSeat = this.tables.find((table) => table.players.length < this.config.playersPerTable)
+      }
+      this.playersWaitingTable.length > Math.floor(this.config.playersPerTable / 2) && this.seatPlayers({ players: this.playersWaitingTable })
+    }
+    this.run()
+  }
+
   run () {
     this.messageBus.next({ message: 'play' })
   }
 
-  seatPlayers ({ players, playersPerTable }) {
-    let groups = chunk(arrayShuffle(players), playersPerTable)
-    if (groups[groups.length - 1].length <= Math.floor(playersPerTable / 2)) {
-      const temp = groups[groups.length - 2].concat(groups[groups.length - 1][0])
+  seatPlayers ({ players }) {
+    let groups = chunk(arrayShuffle(players), this.config.playersPerTable)
+    if (groups[groups.length - 1].length <= Math.floor(this.config.playersPerTable / 2) && groups[groups.length - 2]) {
+      const temp = groups[groups.length - 2].concat(groups[groups.length - 1])
       const half = Math.ceil(temp.length / 2)
       const temp1 = temp.slice(0, half)
       const temp2 = temp.slice(half)
       if (temp2.length === 1) {
-        this.playersWaitingTable.push(temp2[0])
+        if (!this.playersWaitingTable.find((player) => player.name === temp2[0].name)) {
+          this.playersWaitingTable.push(temp2[0])
+        }
         groups = groups.slice(0, groups.length - 2).concat([temp1])
       } else {
         groups = groups.slice(0, groups.length - 2).concat([temp1], [temp2])
       }
     }
-    this.tables = groups.map((group, index) => new Table({ id: index + 1, players: group, tournament: this }))
+    for (const group of groups) {
+      this.tables.push(new Table({ id: ++this.lastTableId, players: group, tournament: this }))
+      this.playersWaitingTable = this.playersWaitingTable.filter((player) => !group.includes(player))
+    }
   }
 }
 

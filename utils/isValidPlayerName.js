@@ -1,4 +1,4 @@
-function isValidPlayerName (playerName) {
+function isValidPlayerName ({ playerName }) {
   return !!playerName.length
 }
 

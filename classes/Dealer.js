@@ -2,18 +2,17 @@ const chalk = require('chalk')
 const gradient = require('gradient-string')
 const { Hand } = require('pokersolver')
 const { catchError, concatMap } = require('rxjs/operators')
-const { difference } = require('lodash')
 const { empty, from, throwError } = require('rxjs')
 
 const Deck = require('./Deck')
-const { cardsToArray, errorToString } = require('../utils')
+const { cardsToArray, errorToString, identify } = require('../utils')
 
 class Dealer {
   constructor ({ table, tournament }) {
     this.deck = new Deck()
     this.table = table
     this.tournament = tournament
-    tournament.messageBus.subscribe(this.processMessage.bind(this))
+    this.start()
   }
 
   async dealCards (howMany = 2) {
@@ -39,12 +38,18 @@ class Dealer {
   }
 
   async play () {
-    while (this.table.players.length > 1) {
+    while (!this.paused && this.table.players.length > 1) {
       await this.playHand()
       const { players } = this.table
       const eliminated = players.filter((player) => player.isBroke())
-      if (eliminated.length) {
-        this.tournament.messageBus.next({ message: 'eliminated', payload: eliminated })
+      if (this.pausing || eliminated.length) {
+        this.paused = true
+        eliminated.length && this.tournament.messageBus.next({ message: 'eliminated', payload: { pausing: !!this.pausing, players: eliminated, tableId: this.table.id } })
+        if (this.pausing) {
+          this.tournament.messageBus.next({ message: 'paused', payload: { tableId: this.table.id } })
+          delete this.pausing
+        }
+        throw new Error('Break')
       }
     }
     return this.table.players[0]
@@ -55,23 +60,23 @@ class Dealer {
     const { id: tableId, players, pot } = this.table
     const { ante, blinds, logger } = this.tournament
     const handId = this.tournament.getHandId()
-    logger(chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
+    logger(identify({ tableId }) + chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
     const positions = this.getPositions()
-    logger(chalk.cyan(`Seat ${positions.button + 1} is the button`))
+    logger(identify({ tableId }) + chalk.cyan(`Seat ${positions.button + 1} is the button`))
     for (const [seat, player] of players.entries()) {
-      logger(chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
+      logger(identify({ tableId }) + chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
     }
     if (ante > 0) {
       await this.ringActivePlayers({
         fn: (player) => {
           const chips = player.pay({ amount: ante })
           pot.addChips({ chips, player })
-          logger(chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+          logger(identify({ tableId }) + chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
         }
       })
       pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
     }
-    logger(chalk.yellow('*** HOLE CARDS ***'))
+    logger(identify({ tableId }) + chalk.yellow('*** HOLE CARDS ***'))
     await this.dealCards()
     const [smallBlind, bigBlind] = blinds
     let chips
@@ -80,13 +85,13 @@ class Dealer {
       chips = players[positions.smallBlind].pay({ amount: smallBlind })
       currentBet = chips
       pot.addChips({ chips, player: players[positions.smallBlind] })
-      logger(chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
+      logger(identify({ tableId }) + chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
     }
     if (!players[positions.bigBlind].isAllIn) {
       chips = players[positions.bigBlind].pay({ amount: bigBlind })
       currentBet = chips > currentBet ? chips : currentBet
       pot.addChips({ chips, player: players[positions.bigBlind] })
-      logger(chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
+      logger(identify({ tableId }) + chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
     }
     if (players.length > 2) {
       currentBet = bigBlind
@@ -108,18 +113,18 @@ class Dealer {
           switch (option) {
             case 'call': {
               pot.addChips({ chips, player })
-              logger(chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+              logger(identify({ tableId }) + chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
               if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
                 throw new Error('Break')
               }
               break
             }
             case 'check': {
-              logger(chalk.magenta(`${player.name}: checks`))
+              logger(identify({ tableId }) + chalk.magenta(`${player.name}: checks`))
               break
             }
             case 'fold': {
-              logger(chalk.magenta(`${player.name}: folds`))
+              logger(identify({ tableId }) + chalk.magenta(`${player.name}: folds`))
               this.activePlayers = this.activePlayers.filter((p) => p.name !== player.name)
               if (this.activePlayers.length === 1) {
                 throw new Error('Break')
@@ -138,7 +143,7 @@ class Dealer {
             case 'raise': {
               pot.addChips({ chips, player })
               currentBet = pot.getCommitted({ player })
-              logger(chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
+              logger(identify({ tableId }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
               playerRaised = true
               skipLast = true
               startAt = this.activePlayers.findIndex((p) => p.name === player.name) + 1
@@ -159,43 +164,52 @@ class Dealer {
         await this.deck.deal() // Burn card
         const cards = await this.deck.deal(i === 0 ? 3 : 1)
         this.table.receiveCards({ cards })
-        logger(chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').trim()}]`))
+        logger(identify({ tableId }) + chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').slice(1)}]`))
         // TODO: betting round
       }
     }
-    logger(chalk.yellow('*** SHOW DOWN ***'))
+    logger(identify({ tableId }) + chalk.yellow('*** SHOW DOWN ***'))
     const hands = {}
     await this.ringActivePlayers({ fn: (player) => {
-      const hand = Hand.solve(cardsToArray(player.showCards()).concat(cardsToArray(this.table.showCards())))
-      logger(chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
+      const hand = Hand.solve(cardsToArray({ cardsShown: player.showCards() }).concat(cardsToArray({ cardsShown: this.table.showCards() })))
+      logger(identify({ tableId }) + chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
       hands[player.name] = hand
     } })
     const winners = pot.getPlayerNamesPerPot().map((playerNames) => {
       const handsPerPot = Object.keys(hands).filter((playerName) => playerNames.includes(playerName)).map((playerName) => hands[playerName])
       return Hand.winners(handsPerPot).map((winner) => {
-        const cards = difference(winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').trim().split(' '), cardsToArray(this.table.showCards()))
-        return this.activePlayers.filter((player) => cardsToArray(player.showCards()).includes(cards[0]))[0]
+        const cards = winner.cardPool.reduce((cards, card) => cards + ' ' + card.value + card.suit, '').slice(1).split(' ').filter((card) => !cardsToArray({ cardsShown: this.table.showCards() }).includes(card))
+        return this.activePlayers.find((player) => cardsToArray({ cardsShown: player.showCards() }).includes(cards[0]))
       }).map((player) => player.name)
     })
     const collected = pot.collect({ winners })
     for (const player of this.activePlayers.filter((player) => Object.keys(collected).includes(player.name))) {
       player.receiveChips({ chips: collected[player.name] })
-      logger(chalk.green(`${player.name} collected ${collected[player.name]} from pot`))
+      logger(identify({ tableId }) + chalk.green(`${player.name} collected ${collected[player.name]} from pot`))
     }
   }
 
   async processMessage ({ message }) {
     try {
       switch (message) {
+        case 'pause': {
+          if (!this.paused) {
+            this.pausing = true
+          }
+          break
+        }
         case 'play': {
+          delete this.paused
           const winner = await this.play()
           console.log(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
           break
         }
       }
     } catch (error) {
-      const { id: tableId } = this.table
-      this.tournament.errors.next({ error, tableId })
+      if (errorToString({ error }) !== 'Break') {
+        const { id: tableId } = this.table
+        this.tournament.errors.next({ error, tableId })
+      }
     }
   }
 
@@ -228,8 +242,16 @@ class Dealer {
           await fn(player)
         }
       }),
-      catchError((error) => errorToString(error) === 'Break' ? empty() : throwError(error))
+      catchError((error) => errorToString({ error }) === 'Break' ? empty() : throwError(error))
     ).toPromise()
+  }
+
+  start () {
+    this.messageBus = this.tournament.messageBus.subscribe(this.processMessage.bind(this))
+  }
+
+  stop () {
+    this.messageBus.unsubscribe()
   }
 }
 

@@ -1,7 +1,7 @@
 const stripAnsi = require('strip-ansi')
 const { chunk } = require('lodash')
 
-function cardsToArray (cardsShown) {
+function cardsToArray ({ cardsShown }) {
   return chunk(stripAnsi(cardsShown).replace(/[\u2660\u2663\u2665\u2666]/g, (suit) => {
     switch (suit) {
       case '\u2660': return 's'

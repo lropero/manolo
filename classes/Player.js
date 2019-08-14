@@ -1,6 +1,5 @@
 class Player {
   constructor ({ chips, name }) {
-    this.cards = []
     this.name = name
     this.stack = chips
   }
@@ -58,6 +57,7 @@ class Player {
   }
 
   setTable ({ table }) {
+    this.reset()
     this.table = table
   }
 

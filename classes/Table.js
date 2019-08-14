@@ -12,6 +12,11 @@ class Table {
     this.assignDealer({ tournament })
   }
 
+  addPlayer ({ player }) {
+    player.setTable({ table: this })
+    this.players.push(player)
+  }
+
   addToPot ({ chips, player }) {
     const currentPot = 0
     this.pots[currentPot][player] = (this.pots[currentPot][player] || 0) + chips
@@ -21,16 +26,18 @@ class Table {
     this.dealer = new Dealer({ table: this, tournament })
   }
 
-  hasPlayer ({ player }) {
-    return !!this.players.find((p) => p.name === player.name)
+  break () {
+    this.dealer.stop()
+    delete this.dealer
+    delete this.players
   }
 
   receiveCards ({ cards }) {
     this.cards.push(...cards)
   }
 
-  removePlayer ({ player }) {
-    this.players = this.players.filter((p) => p.name !== player.name)
+  removePlayer ({ playerName }) {
+    this.players = this.players.filter((player) => player.name !== playerName)
   }
 
   reset ({ buck }) {
