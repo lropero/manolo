@@ -17,11 +17,6 @@ class Table {
     this.players.push(player)
   }
 
-  addToPot ({ chips, player }) {
-    const currentPot = 0
-    this.pots[currentPot][player] = (this.pots[currentPot][player] || 0) + chips
-  }
-
   assignDealer ({ tournament }) {
     this.dealer = new Dealer({ table: this, tournament })
   }

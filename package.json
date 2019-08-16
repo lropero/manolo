@@ -14,7 +14,7 @@
     "strip-ansi": "^5.2.0"
   },
   "devDependencies": {
-    "rimraf": "^2.7.0",
+    "rimraf": "^3.0.0",
     "standard": "^13.1.0"
   },
   "scripts": {
