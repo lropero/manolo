@@ -12,9 +12,9 @@ const colors = arrayShuffle([
   ['gray', 'white']
 ])
 
-function identifyTable ({ tableId, tablesLength }) {
+function identifyTable ({ lastTableId, tableId }) {
   const key = tableId % colors.length
-  return `${chalk.bgKeyword(colors[key][0]).keyword(colors[key][1])(tableId.toString().padStart(tablesLength.toString().length))} `
+  return `${chalk.bgKeyword(colors[key][0]).keyword(colors[key][1])(tableId.toString().padStart(lastTableId.toString().length))} `
 }
 
 module.exports = identifyTable

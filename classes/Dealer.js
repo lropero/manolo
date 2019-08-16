@@ -60,23 +60,23 @@ class Dealer {
     const { id: tableId, players, pot } = this.table
     const { ante, blinds, logger } = this.tournament
     const handId = this.tournament.getHandId()
-    logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
+    logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
     const positions = this.getPositions()
-    logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.cyan(`Seat ${positions.button + 1} is the button`))
+    logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.cyan(`Seat ${positions.button + 1} is the button`))
     for (const [seat, player] of players.entries()) {
-      logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
+      logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.blue(`Seat ${seat + 1}: ${player.name} (${player.stack} in chips)`))
     }
     if (ante > 0) {
       await this.ringActivePlayers({
         fn: (player) => {
           const chips = player.pay({ amount: ante })
           pot.addChips({ chips, player })
-          logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+          logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.gray(`${player.name}: posts the ante ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
         }
       })
       pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
     }
-    logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.yellow('*** HOLE CARDS ***'))
+    logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.yellow('*** HOLE CARDS ***'))
     await this.dealCards()
     const [smallBlind, bigBlind] = blinds
     let chips
@@ -85,13 +85,13 @@ class Dealer {
       chips = players[positions.smallBlind].pay({ amount: smallBlind })
       currentBet = chips
       pot.addChips({ chips, player: players[positions.smallBlind] })
-      logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
+      logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
     }
     if (!players[positions.bigBlind].isAllIn) {
       chips = players[positions.bigBlind].pay({ amount: bigBlind })
       currentBet = chips > currentBet ? chips : currentBet
       pot.addChips({ chips, player: players[positions.bigBlind] })
-      logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
+      logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
     }
     if (players.filter((player) => !player.isAllIn).length > 2) {
       currentBet = bigBlind
@@ -113,18 +113,18 @@ class Dealer {
           switch (option) {
             case 'call': {
               pot.addChips({ chips, player })
-              logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
+              logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
               if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
                 throw new Error('Break')
               }
               break
             }
             case 'check': {
-              logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.magenta(`${player.name}: checks`))
+              logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.magenta(`${player.name}: checks`))
               break
             }
             case 'fold': {
-              logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.magenta(`${player.name}: folds`))
+              logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.magenta(`${player.name}: folds`))
               this.activePlayers = this.activePlayers.filter((p) => p.name !== player.name)
               if (this.activePlayers.length === 1) {
                 throw new Error('Break')
@@ -143,7 +143,7 @@ class Dealer {
             case 'raise': {
               pot.addChips({ chips, player })
               currentBet = pot.getCommitted({ player })
-              logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
+              logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
               playerRaised = true
               skipLast = true
               startAt = this.activePlayers.findIndex((p) => p.name === player.name) + 1
@@ -164,15 +164,15 @@ class Dealer {
         await this.deck.deal() // Burn card
         const cards = await this.deck.deal(i === 0 ? 3 : 1)
         this.table.receiveCards({ cards })
-        logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').slice(1)}]`))
+        logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.yellow(`*** ${i === 0 ? 'FLOP' : (i === 1 ? 'TURN' : 'RIVER')} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').slice(1)}]`))
         // TODO: betting round
       }
     }
-    logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.yellow('*** SHOW DOWN ***'))
+    logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.yellow('*** SHOW DOWN ***'))
     const hands = {}
     await this.ringActivePlayers({ fn: (player) => {
       const hand = Hand.solve(cardsToArray({ cardsShown: player.showCards() }).concat(cardsToArray({ cardsShown: this.table.showCards() })))
-      logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
+      logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.white(`${player.name}: shows ${player.showCards()} (${hand.descr})`))
       hands[player.name] = hand
     } })
     const winners = pot.getPlayerNamesPerPot().map((playerNames) => {
@@ -185,7 +185,7 @@ class Dealer {
     const collected = pot.collect({ winners })
     for (const player of this.activePlayers.filter((player) => Object.keys(collected).includes(player.name))) {
       player.receiveChips({ chips: collected[player.name] })
-      logger(identifyTable({ tableId, tablesLength: this.tournament.tables.length }) + chalk.green(`${player.name} collected ${collected[player.name]} from pot`))
+      logger(identifyTable({ lastTableId: this.tournament.tables[this.tournament.tables.length - 1].id, tableId }) + chalk.green(`${player.name} collected ${collected[player.name]} from pot`))
     }
   }
 
