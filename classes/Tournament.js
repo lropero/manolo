@@ -116,8 +116,7 @@ class Tournament {
   async reaccommodateTables ({ tableId }) {
     if (this.tables.length > 1) {
       await this.pause({ tableId })
-      const players = [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable)
-      let freeSeats = (this.tables.length * this.config.playersPerTable) - players.length
+      let freeSeats = (this.tables.length * this.config.playersPerTable) - [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable).length
       while (freeSeats > this.config.playersPerTable && this.tables.length > 1) {
         const smallestTable = this.tables.reduce((smallestTable, table) => {
           if (table.players.length < smallestTable.players.length) {
@@ -134,11 +133,11 @@ class Tournament {
             this.playersWaitingTable.push(player)
           }
         }
-        const seated = [].concat(...this.tables.map((table) => table.players)).map((player) => player.name)
-        this.playersWaitingTable = this.playersWaitingTable.filter((player) => !seated.includes(player.name))
         smallestTable.break()
         this.tables = this.tables.filter((table) => table.id !== smallestTable.id)
-        freeSeats = (this.tables.length * this.config.playersPerTable) - players.length
+        const seated = [].concat(...this.tables.map((table) => table.players)).map((player) => player.name)
+        this.playersWaitingTable = this.playersWaitingTable.filter((player) => !seated.includes(player.name))
+        freeSeats = (this.tables.length * this.config.playersPerTable) - [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable).length
       }
       const tablesWithOnePlayer = this.tables.filter((table) => table.players.length === 1)
       for (const tableWithOnePlayer of tablesWithOnePlayer) {
