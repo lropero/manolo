@@ -22,7 +22,7 @@ class Table {
   }
 
   break () {
-    this.dealer.stop()
+    this.dealer.unsubscribe()
     delete this.dealer
     delete this.players
   }

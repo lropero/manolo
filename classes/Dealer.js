@@ -12,7 +12,7 @@ class Dealer {
     this.deck = new Deck()
     this.table = table
     this.tournament = tournament
-    this.start()
+    this.subscribe()
   }
 
   async dealCards (howMany = 2) {
@@ -246,11 +246,11 @@ class Dealer {
     ).toPromise()
   }
 
-  start () {
+  subscribe () {
     this.messageBus = this.tournament.messageBus.subscribe(this.processMessage.bind(this))
   }
 
-  stop () {
+  unsubscribe () {
     this.messageBus.unsubscribe()
   }
 }
