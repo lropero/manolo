@@ -2,7 +2,7 @@
 *Check your privilege*
 
 ### Requires
-- Node v10.16.2
+- Node v10.16.3
 - Yarn v1.17.3
 
 ### Installation

@@ -10,11 +10,10 @@ const { errorToString, isValidPlayerName } = require('../utils')
 
 class Tournament {
   constructor ({ config, logger, players }) {
-    this.ante = config.ante || 0
-    this.blinds = config.blinds
     this.config = config
     this.errors = new Subject()
     this.handCount = 0
+    this.handCountPerTable = {}
     this.lastTableId = 0
     this.logger = logger
     this.messageBus = new Subject()
@@ -28,9 +27,9 @@ class Tournament {
   static initialize ({ config = {}, logger = () => {}, playerNames = [] } = {}) {
     return new Promise((resolve, reject) => {
       try {
-        const { blinds, playersPerTable = 0, startingChips = 0 } = config
-        if (!Array.isArray(blinds) || !(blinds.length === 2) || !(blinds[0] > 0) || !(blinds[1] > 0)) {
-          throw new Error('Tournament requires config.blinds to be an array of 2 numbers greater than 0')
+        const { levels, playersPerTable = 0, startingChips = 0 } = config
+        if (!Array.isArray(levels) || !(levels[0].length >= 3) || !(levels[0][1] > 0) || !(levels[0][2] > 0)) {
+          throw new Error('Tournament requires config.levels to be properly configured')
         }
         if (playersPerTable < 2 || playersPerTable > 9) {
           throw new Error('Tournament requires config.playersPerTable to be between 2 and 9')
@@ -61,7 +60,29 @@ class Tournament {
     })
   }
 
-  getHandId () {
+  getAnteAndBlinds () {
+    const { levels } = this.config
+    if (!this.level) {
+      this.level = 1
+    } else if (levels[this.level - 1][3] && levels[this.level]) {
+      const values = Object.values(this.handCountPerTable)
+      const average = values.reduce((sum, value) => sum + value, 0) / values.length
+      if (average >= levels[this.level - 1][3]) {
+        this.handCountPerTable = {}
+        this.level++
+      }
+    }
+    return {
+      ante: levels[this.level - 1][0],
+      blinds: [levels[this.level - 1][1], levels[this.level - 1][2]]
+    }
+  }
+
+  getHandId ({ tableId }) {
+    if (!this.handCountPerTable[tableId]) {
+      this.handCountPerTable[tableId] = 0
+    }
+    this.handCountPerTable[tableId]++
     return ++this.handCount
   }
 
