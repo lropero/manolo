@@ -95,12 +95,10 @@ class Dealer {
       pot.addChips({ chips, player: players[positions.bigBlind] })
       logger(identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) + chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
     }
-    if (players.filter((player) => !player.isAllIn).length > 2) {
+    if (players.filter((player) => player.name !== players[positions.smallBlind].name && player.name !== players[positions.bigBlind].name && !player.isAllIn).length) {
       currentBet = bigBlind
-    } else if (players === 2 && (players[positions.smallBlind].isAllIn || players[positions.bigBlind].isAllIn)) {
-      if (players[positions.smallBlind].isAllIn || currentBet <= pot.getLast({ player: players[positions.smallBlind] })) {
-        pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
-      }
+    } else if (players.length === 2 && (players[positions.smallBlind].isAllIn || players[positions.bigBlind].isAllIn)) {
+      pot.normalize({ activePlayerNames: this.activePlayers.map((player) => player.name) })
     }
     let skipLast = false
     let startAt = players.length === 2 ? 1 : 2
