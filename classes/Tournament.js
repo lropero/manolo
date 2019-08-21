@@ -103,7 +103,7 @@ class Tournament {
         if (paused.length === this.tables.length) {
           this.subscription.unsubscribe()
           delete this.pausing
-          return resolve(paused)
+          return resolve()
         }
       })
       this.messageBus.next({ message: 'pause' })
