@@ -16,5 +16,5 @@ const run = async ({ config, logger, playerNames }) => {
 }
 
 const logger = console.log // Winston?
-const playerNames = new Array(135).fill('').map((player, index) => `player${index + 1}`)
+const playerNames = new Array(config.numberOfPlayers).fill('').map((player, index) => `player${index + 1}`)
 run({ config, logger, playerNames })
