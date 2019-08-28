@@ -4,11 +4,11 @@ class Pot {
     this.puts = {}
   }
 
-  addChips ({ chips, player }) {
-    if (!this.puts[player.name]) {
-      this.puts[player.name] = []
+  addChips ({ chips, playerName }) {
+    if (!this.puts[playerName]) {
+      this.puts[playerName] = []
     }
-    this.puts[player.name].push(chips)
+    this.puts[playerName].push(chips)
   }
 
   collect ({ winners }) {
@@ -30,6 +30,10 @@ class Pot {
       }
       return collected
     }, {})
+  }
+
+  count () {
+    return this.pots.reduce((chips, pot) => chips + Object.values(pot).reduce((sum, value) => sum + value, 0), 0)
   }
 
   getCommitted ({ player }) {

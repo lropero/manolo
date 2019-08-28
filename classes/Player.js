@@ -4,23 +4,31 @@ class Player {
     this.stack = chips
   }
 
-  decide ({ activePlayers, currentBet }) {
+  decide ({ activePlayers, currentBet = 0 }) {
     return new Promise((resolve, reject) => {
       const { pot } = this.table
-      const committed = pot.getCommitted({ player: this })
-      const amount = currentBet - committed
-      let options = [1, 3, 4]
-      if (amount === 0) {
-        options = [2, 4]
-      } else if (this.stack + committed <= currentBet || !activePlayers.filter((player) => !player.isAllIn && !player.name === this.name).length) {
+      let amount
+      let committed
+      let options = [2, 4, 5]
+      if (currentBet === 0) {
         options = [1, 3]
+      } else {
+        committed = pot.getCommitted({ player: this })
+        amount = currentBet - committed
+        const alone = !activePlayers.filter((player) => !player.isAllIn && player.name !== this.name).length
+        if (amount === 0) {
+          options = [3, 5]
+        } else if (this.stack + committed <= currentBet || alone) {
+          options = [2, 4]
+        }
       }
       const random = options[Math.floor(Math.random() * options.length)]
       switch (random) {
-        case 1: return resolve(`call ${this.pay({ amount })}`)
-        case 2: return resolve('check')
-        case 3: return resolve('fold')
-        case 4: return resolve(`raise ${this.pay({ amount: (currentBet * 2) - committed })}`)
+        case 1: return resolve(`bet ${this.pay({ amount: Math.round(pot.count() / 2) })}`)
+        case 2: return resolve(`call ${this.pay({ amount })}`)
+        case 3: return resolve('check')
+        case 4: return resolve('fold')
+        case 5: return resolve(`raise ${this.pay({ amount: (currentBet * 2) - committed })}`)
       }
     })
   }
