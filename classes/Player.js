@@ -15,10 +15,9 @@ class Player {
       } else {
         committed = pot.getCommitted({ player: this })
         amount = currentBet - committed
-        const alone = !activePlayers.filter((player) => !player.isAllIn && player.name !== this.name).length
         if (amount === 0) {
           options = [3, 5]
-        } else if (this.stack + committed <= currentBet || alone) {
+        } else if (this.stack + committed <= currentBet || !activePlayers.filter((player) => !player.isAllIn && player.name !== this.name).length) {
           options = [2, 4]
         }
       }
