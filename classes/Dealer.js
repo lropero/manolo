@@ -1,5 +1,4 @@
 const chalk = require('chalk')
-const gradient = require('gradient-string')
 const { Hand } = require('pokersolver')
 const { catchError, concatMap } = require('rxjs/operators')
 const { empty, from, throwError } = require('rxjs')
@@ -12,7 +11,6 @@ class Dealer {
     this.deck = new Deck()
     this.table = table
     this.tournament = tournament
-    this.subscribe()
   }
 
   async bettingRound ({ currentBet = 0, lastTableId, logger, pot, skipLast = false, startAt = 0, tableId }) {
@@ -131,31 +129,12 @@ class Dealer {
     }
   }
 
-  async play () {
-    const { messageBus } = this.tournament
-    while (!this.paused && this.table.players.length > 1) {
-      await this.playHand()
-      const { players } = this.table
-      const eliminated = players.filter((player) => player.isBroke())
-      if (this.pausing || eliminated.length) {
-        this.paused = true
-        eliminated.length && messageBus.next({ message: 'eliminated', payload: { pausing: !!this.pausing, players: eliminated, tableId: this.table.id } })
-        if (this.pausing) {
-          messageBus.next({ message: 'paused', payload: { tableId: this.table.id } })
-          delete this.pausing
-        }
-        throw new Error('Break')
-      }
-    }
-    return this.table.players[0]
-  }
-
   async playHand () {
     this.resetTable()
     const { id: tableId, players, pot } = this.table
     const { logger, tables } = this.tournament
     const { ante, blinds: [smallBlind, bigBlind] } = this.tournament.getAnteAndBlinds()
-    const handId = this.tournament.getHandId({ tableId })
+    const handId = this.tournament.getHandId()
     logger(identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) + chalk.green.underline(`Hand #${handId}, Table #${tableId}`))
     const positions = this.getPositions()
     logger(identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) + chalk.cyan(`Seat ${positions.button + 1} is the button`))
@@ -229,31 +208,6 @@ class Dealer {
     }
   }
 
-  async processMessage ({ message }) {
-    const { errors } = this.tournament
-    try {
-      switch (message) {
-        case 'pause': {
-          if (!this.paused) {
-            this.pausing = true
-          }
-          break
-        }
-        case 'play': {
-          delete this.paused
-          const winner = await this.play()
-          console.log(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
-          break
-        }
-      }
-    } catch (error) {
-      if (errorToString({ error }) !== 'Break') {
-        const { id: tableId } = this.table
-        errors.next({ error, tableId })
-      }
-    }
-  }
-
   resetTable () {
     const { buck, players } = this.table
     this.table.reset({ buck: (Number.isInteger(buck) && (buck + 1 < players.length ? buck + 1 : 0)) || 0 })
@@ -285,15 +239,6 @@ class Dealer {
       }),
       catchError((error) => errorToString({ error }) === 'Break' ? empty() : throwError(error))
     ).toPromise()
-  }
-
-  subscribe () {
-    const { messageBus } = this.tournament
-    this.messageBus = messageBus.subscribe(this.processMessage.bind(this))
-  }
-
-  unsubscribe () {
-    this.messageBus.unsubscribe()
   }
 }
 

@@ -8,9 +8,12 @@ const { errorToString } = require('./utils')
 const run = async ({ config, logger, playerNames }) => {
   try {
     const tournament = await Tournament.initialize({ config, logger, playerNames })
-    tournament.run()
+    await tournament.run()
   } catch (error) {
     logger(`${chalk.red(cross)} ${errorToString({ error })}`)
+    if (error.stack) {
+      logger(chalk.yellow(error.stack))
+    }
     process.exit(0)
   }
 }

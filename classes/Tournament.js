@@ -1,27 +1,21 @@
 const arrayShuffle = require('array-shuffle')
-const chalk = require('chalk')
-const { Subject } = require('rxjs')
+const gradient = require('gradient-string')
 const { chunk } = require('lodash')
-const { cross } = require('figures')
 
 const Player = require('./Player')
 const Table = require('./Table')
-const { errorToString, isValidPlayerName } = require('../utils')
+const { isValidPlayerName } = require('../utils')
 
 class Tournament {
   constructor ({ config, logger, players }) {
     this.config = config
-    this.errors = new Subject()
     this.handCount = 0
-    this.handCountPerTable = {}
-    this.lastTableId = 0
+    this.handCountPerLevel = 0
+    this.level = 0
     this.logger = logger
-    this.messageBus = new Subject()
     this.playersWaitingTable = []
     this.tables = []
     this.seatPlayers({ players })
-    this.errors.subscribe(this.handleError.bind(this))
-    this.messageBus.subscribe(this.processMessage.bind(this))
   }
 
   static initialize ({ config = {}, logger = () => {}, playerNames = [] } = {}) {
@@ -62,85 +56,56 @@ class Tournament {
 
   getAnteAndBlinds () {
     const { levels } = this.config
-    if (!this.level) {
-      this.level = 1
-    } else if (levels[this.level - 1][3] && levels[this.level]) {
-      const values = Object.values(this.handCountPerTable)
-      const average = values.reduce((sum, value) => sum + value, 0) / values.length
-      if (average >= levels[this.level - 1][3]) {
-        this.handCountPerTable = {}
-        this.level++
-      }
-    }
     return {
-      ante: levels[this.level - 1][0],
-      blinds: [levels[this.level - 1][1], levels[this.level - 1][2]]
+      ante: levels[this.level][0],
+      blinds: [levels[this.level][1], levels[this.level][2]]
     }
   }
 
-  getHandId ({ tableId }) {
-    if (!this.handCountPerTable[tableId]) {
-      this.handCountPerTable[tableId] = 0
-    }
-    this.handCountPerTable[tableId]++
+  getHandId () {
     return ++this.handCount
   }
 
-  handleError ({ error, tableId = 0 }) {
-    this.logger(`${chalk.red(cross)} ${tableId ? 'Table ' + tableId + ' -> ' : ''}${errorToString({ error })}`)
-    if (error.stack) {
-      this.logger(chalk.yellow(error.stack))
-    }
-    process.exit(1) // ..there better be no errors! :)
-  }
-
-  pause ({ tableId }) {
-    return new Promise((resolve, reject) => {
-      const paused = [tableId]
-      this.pausing = new Subject()
-      this.subscription = this.pausing.subscribe((tableId) => {
-        paused.push(tableId)
-        if (paused.length === this.tables.length) {
-          this.subscription.unsubscribe()
-          delete this.pausing
-          return resolve()
-        }
-      })
-      this.messageBus.next({ message: 'pause' })
-    })
-  }
-
-  async processMessage ({ message, payload }) {
-    try {
-      switch (message) {
-        case 'eliminated': {
-          const { pausing, players, tableId } = payload
-          for (const player of players) {
-            this.tables.find((table) => table.id === tableId).removePlayer({ playerName: player.name })
-          }
-          if (!pausing) {
-            await this.reaccommodateTables({ tableId })
-          }
-          break
-        }
-        case 'paused': {
-          const { tableId } = payload
-          this.pausing.next(tableId)
-          break
+  async play () {
+    const eliminated = []
+    let pause = false
+    while (!pause && (this.tables.length > 1 || this.tables[0].players.length > 1)) {
+      this.handCountPerLevel++
+      if (this.handCountPerLevel === this.config.levels.slice(0, this.level + 1).reduce((limit, level) => limit + level[3], 0)) {
+        this.handCountPerLevel = 0
+        this.level++
+      }
+      let pausing = false
+      for (const table of this.tables) {
+        await table.dealer.playHand()
+        eliminated.push(...table.players.filter((player) => player.isBroke()).map((player) => [table.id, player.name]))
+        if (eliminated.length) {
+          pausing = true
         }
       }
-    } catch (error) {
-      this.errors.next({ error })
+      pause = pausing
     }
+    if (pause) {
+      for (const [tableId, playerName] of eliminated) {
+        this.tables.find((table) => table.id === tableId).removePlayer({ playerName })
+      }
+      await this.reaccommodateTables()
+      const winner = await this.play()
+      return winner
+    }
+    return this.tables[0].players[0]
   }
 
-  async reaccommodateTables ({ tableId }) {
+  async reaccommodateTables () {
     if (this.tables.length > 1) {
-      await this.pause({ tableId })
+      for (const tableWithOnePlayer of this.tables.filter((table) => table.players.length === 1)) {
+        this.playersWaitingTable.push(tableWithOnePlayer.players[0])
+        this.tables = this.tables.filter((table) => table.id !== tableWithOnePlayer.id)
+      }
       let freeSeats = (this.tables.length * this.config.playersPerTable) - [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable).length
       while (freeSeats > this.config.playersPerTable && this.tables.length > 1) {
         const smallestTable = this.tables.reduce((smallestTable, table) => {
-          if (table.players.length < smallestTable.players.length) {
+          if (table.players.length <= smallestTable.players.length) {
             return table
           }
           return smallestTable
@@ -154,17 +119,10 @@ class Tournament {
             this.playersWaitingTable.push(player)
           }
         }
-        smallestTable.break()
         this.tables = this.tables.filter((table) => table.id !== smallestTable.id)
         const seated = [].concat(...this.tables.map((table) => table.players)).map((player) => player.name)
         this.playersWaitingTable = this.playersWaitingTable.filter((player) => !seated.includes(player.name))
         freeSeats = (this.tables.length * this.config.playersPerTable) - [].concat(...this.tables.map((table) => table.players), this.playersWaitingTable).length
-      }
-      const tablesWithOnePlayer = this.tables.filter((table) => table.players.length === 1)
-      for (const tableWithOnePlayer of tablesWithOnePlayer) {
-        this.playersWaitingTable.push(tableWithOnePlayer.players[0])
-        tableWithOnePlayer.break()
-        this.tables = this.tables.filter((table) => table.id !== tableWithOnePlayer.id)
       }
     }
     if (this.playersWaitingTable.length) {
@@ -173,13 +131,15 @@ class Tournament {
         tableWithFreeSeat.addPlayer({ player: this.playersWaitingTable.pop() })
         tableWithFreeSeat = this.tables.find((table) => table.players.length < this.config.playersPerTable)
       }
-      this.playersWaitingTable.length > Math.floor(this.config.playersPerTable / 2) && this.seatPlayers({ players: this.playersWaitingTable })
+      if (this.playersWaitingTable.length > Math.floor(this.config.playersPerTable / 2)) {
+        this.seatPlayers({ players: this.playersWaitingTable })
+      }
     }
-    this.run()
   }
 
-  run () {
-    this.messageBus.next({ message: 'play' })
+  async run () {
+    const winner = await this.play()
+    console.log(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
   }
 
   seatPlayers ({ players }) {
@@ -199,7 +159,7 @@ class Tournament {
       }
     }
     for (const group of groups) {
-      this.tables.push(new Table({ id: ++this.lastTableId, players: group, tournament: this }))
+      this.tables.push(new Table({ id: ((this.tables[this.tables.length - 1] && this.tables[this.tables.length - 1].id) || 0) + 1, players: group, tournament: this }))
       this.playersWaitingTable = this.playersWaitingTable.filter((player) => !group.includes(player))
     }
   }

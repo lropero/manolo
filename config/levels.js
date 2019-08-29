@@ -1,5 +1,5 @@
 module.exports = [
-  [5, 25, 50, 20], // ante, small blind, big blind, average number of hands required to increase level
+  [5, 25, 50, 20], // ante, small blind, big blind, number of hands required to increase level
   [6, 30, 60, 20],
   [8, 40, 80, 20],
   [10, 50, 100, 20],
