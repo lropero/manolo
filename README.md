@@ -3,7 +3,7 @@
 
 ### Requires
 - Node v10.16.3
-- Yarn v1.17.3
+- Yarn v1.19.1
 
 ### Installation
 ```sh
@@ -20,5 +20,3 @@ $ yarn run start
 - Player hand ranges
 - Range vs. risk/reward ratio ruleset
 - ML
-
->~~Want to train Machine Learning models using manolo? Sure, I'm on the same boat, [drop me an email](mailto:lropero@gmail.com) and I'll be willing to help.~~ Diego ponete las pilas!

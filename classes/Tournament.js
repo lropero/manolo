@@ -139,7 +139,7 @@ class Tournament {
 
   async run () {
     const winner = await this.play()
-    console.log(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
+    this.logger(gradient.rainbow(`Winner is ${winner.name} with ${winner.stack} chips`))
   }
 
   seatPlayers ({ players }) {

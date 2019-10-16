@@ -13,7 +13,7 @@ class Player {
       if (currentBet === 0) {
         options = [1, 3]
       } else {
-        committed = pot.getCommitted({ player: this })
+        committed = pot.getCommitted({ playerName: this.name })
         amount = currentBet - committed
         if (amount === 0) {
           options = [3, 5]

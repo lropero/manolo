@@ -25,7 +25,7 @@ class Dealer {
           switch (option) {
             case 'bet': {
               pot.addChips({ chips, playerName: player.name })
-              currentBet = pot.getCommitted({ player })
+              currentBet = pot.getCommitted({ playerName: player.name })
               logger(identifyTable({ lastTableId, tableId }) + chalk.magenta(`${player.name}: bets ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
               playerRaised = true
               skipLast = true
@@ -61,7 +61,7 @@ class Dealer {
             case 'call': {
               pot.addChips({ chips, playerName: player.name })
               logger(identifyTable({ lastTableId, tableId }) + chalk.magenta(`${player.name}: calls ${chips}${player.isAllIn ? ' and is all-in' : ''}`))
-              if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
+              if (!this.activePlayers.filter((player) => !player.isAllIn).length) {
                 throw new Error('Break')
               }
               break
@@ -77,11 +77,11 @@ class Dealer {
                 throw new Error('Break')
               } else if (this.activePlayers.filter((player) => !player.isAllIn).length === 1) {
                 const maxBetFromAllInPlayers = this.activePlayers.filter((player) => player.isAllIn).reduce((maxBetFromAllInPlayers, player) => {
-                  const committed = pot.getCommitted({ player })
+                  const committed = pot.getCommitted({ playerName: player.name })
                   return committed > maxBetFromAllInPlayers ? committed : maxBetFromAllInPlayers
                 }, 0)
                 const remainingPlayer = this.activePlayers.find((player) => !player.isAllIn)
-                if (pot.getCommitted({ player: remainingPlayer }) >= maxBetFromAllInPlayers) {
+                if (pot.getCommitted({ playerName: remainingPlayer.name }) >= maxBetFromAllInPlayers) {
                   throw new Error('Break')
                 }
               }
@@ -89,7 +89,7 @@ class Dealer {
             }
             case 'raise': {
               pot.addChips({ chips, playerName: player.name })
-              currentBet = pot.getCommitted({ player })
+              currentBet = pot.getCommitted({ playerName: player.name })
               logger(identifyTable({ lastTableId, tableId }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
               playerRaised = true
               skipLast = true
