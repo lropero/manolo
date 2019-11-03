@@ -6,7 +6,7 @@
   "dependencies": {
     "array-shuffle": "^1.0.1",
     "chalk": "^2.4.2",
-    "figures": "^3.0.0",
+    "figures": "^3.1.0",
     "gradient-string": "^1.2.0",
     "lodash": "^4.17.15",
     "pokersolver": "^2.1.3",
@@ -17,12 +17,12 @@
     "rimraf": "^3.0.0"
   },
   "scripts": {
-    "clean": "rimraf ./yarn.lock && rimraf ./yarn-*.log && yarn cache clean",
-    "init": "rimraf ./node_modules && yarn",
+    "clean": "rimraf ./package-lock.json && rimraf ./npm-*.log && npm cache verify",
+    "init": "rimraf ./node_modules && npm install",
     "lint": "npx standard --fix",
-    "nuke": "yarn run clean && yarn run init",
+    "nuke": "npm run clean && npm run init",
     "start": "node --max-old-space-size=4096 index.js",
-    "upgrade": "npx upgradeps"
+    "upgrade": "npx upgradeps -n"
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
   "license": "UNLICENSED"

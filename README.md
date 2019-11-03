@@ -2,17 +2,16 @@
 *Check your privilege*
 
 ### Requires
-- Node v10.16.3
-- Yarn v1.19.1
+- Node v12.13.0
 
 ### Installation
 ```sh
-$ yarn
+$ npm install
 ```
 
 ### Usage
 ```sh
-$ yarn run start
+$ npm run start
 ```
 
 ### To do
