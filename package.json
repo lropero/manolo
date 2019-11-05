@@ -17,10 +17,9 @@
     "rimraf": "^3.0.0"
   },
   "scripts": {
-    "clean": "rimraf ./package-lock.json && rimraf ./npm-*.log && npm cache verify",
-    "init": "rimraf ./node_modules && npm install",
+    "clean": "rimraf ./npm-*.log && rimraf ./package-lock.json && rimraf ./node_modules && npm cache verify",
     "lint": "npx standard --fix",
-    "nuke": "npm run clean && npm run init",
+    "nuke": "npm run clean && npm install",
     "start": "node --max-old-space-size=4096 index.js",
     "upgrade": "npx upgradeps -n"
   },
