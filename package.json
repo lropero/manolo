@@ -1,7 +1,7 @@
 {
   "name": "manolo",
   "version": "0.0.1",
-  "description": "A poker Monte Carlo lab.",
+  "description": "A poker Monte Carlo lab, data generator for ML.",
   "main": "index.js",
   "dependencies": {
     "array-shuffle": "^1.0.1",
