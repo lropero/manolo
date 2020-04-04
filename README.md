@@ -2,7 +2,7 @@
 *Check your privilege*
 
 ### Requires
-- Node v12.13.0
+- Node v13.12.0
 
 ### Installation
 ```sh
