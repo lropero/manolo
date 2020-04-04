@@ -14,7 +14,7 @@ $ npm install
 $ npm run start
 ```
 
-### To do
+### TODO
 - Tournament stats
 - Player hand ranges
 - Range vs. risk/reward ratio ruleset
