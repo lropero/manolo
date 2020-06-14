@@ -6,7 +6,7 @@ class Table {
     this.cards = []
     this.dealer = new Dealer({ table: this, tournament })
     this.id = id
-    this.players = players.map((player) => {
+    this.players = players.map(player => {
       player.setTable({ table: this })
       return player
     })
@@ -22,7 +22,7 @@ class Table {
   }
 
   removePlayer ({ playerName }) {
-    this.players = this.players.filter((player) => player.name !== playerName)
+    this.players = this.players.filter(player => player.name !== playerName)
   }
 
   reset ({ buck }) {

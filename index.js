@@ -7,8 +7,15 @@ const { errorToString } = require('./utils')
 
 const run = async ({ config, logger, playerNames }) => {
   try {
-    const tournament = await Tournament.initialize({ config, logger, playerNames })
+    const tournament = await Tournament.initialize({
+      config,
+      logger,
+      playerNames
+    })
     await tournament.run()
+    console.log(
+      "Hey, I'd like to know about your research, drop me an email :)"
+    )
   } catch (error) {
     logger(`${chalk.red(cross)} ${errorToString({ error })}`)
     if (error.stack) {
@@ -19,5 +26,7 @@ const run = async ({ config, logger, playerNames }) => {
 }
 
 const logger = console.log // Winston?
-const playerNames = new Array(config.numberOfPlayers).fill('').map((player, index) => `player${index + 1}`)
+const playerNames = new Array(config.numberOfPlayers)
+  .fill('')
+  .map((player, index) => `player${index + 1}`)
 run({ config, logger, playerNames })

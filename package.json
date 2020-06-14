@@ -4,14 +4,14 @@
   "description": "A poker Monte Carlo lab, data generator for ML.",
   "scripts": {
     "clean": "rimraf ./npm-*.log && rimraf ./package-lock.json && rimraf ./node_modules && npm cache verify",
-    "lint": "npx standard --fix",
+    "lint": "prettier-standard --lint",
     "nuke": "npm run clean && npm install",
     "start": "node --max-old-space-size=4096 index.js",
     "upgrade": "npx upgradeps -n"
   },
   "dependencies": {
     "array-shuffle": "^1.0.1",
-    "chalk": "^4.0.0",
+    "chalk": "^4.1.0",
     "figures": "^3.2.0",
     "gradient-string": "^1.2.0",
     "lodash": "^4.17.15",
@@ -20,7 +20,15 @@
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.10",
+    "prettier-standard": "^16.3.0",
     "rimraf": "^3.0.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
   "license": "UNLICENSED",
