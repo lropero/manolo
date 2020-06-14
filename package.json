@@ -1,6 +1,6 @@
 {
   "name": "manolo",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A poker Monte Carlo lab, data generator for ML.",
   "main": "index.js",
   "scripts": {
