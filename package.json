@@ -2,6 +2,7 @@
   "name": "manolo",
   "version": "0.0.1",
   "description": "A poker Monte Carlo lab, data generator for ML.",
+  "main": "index.js",
   "scripts": {
     "clean": "rimraf ./npm-*.log && rimraf ./package-lock.json && rimraf ./node_modules && npm cache verify",
     "lint": "prettier-standard --lint",
@@ -32,5 +33,5 @@
   },
   "author": "Luciano Ropero <lropero@gmail.com>",
   "license": "UNLICENSED",
-  "main": "index.js"
+  "private": true
 }
