@@ -4,27 +4,27 @@ _Check your privilege_
 
 <img src="manolo.gif?raw=true" width="600">
 
-## Requires
+### Requires
 
 - Node v14.4.0
 
-## Installation
+### Installation
 
 ```sh
 $ npm install
 ```
 
-## Usage
+### Usage
 
 ```sh
 $ npm run start
 ```
 
-## Contributing
+### Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-## TODO
+### TODO
 
 - Tournament stats
 - Player hand ranges
