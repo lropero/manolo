@@ -3,7 +3,7 @@ const { Hand } = require('pokersolver')
 const { catchError, concatMap } = require('rxjs/operators')
 const { empty, from, throwError } = require('rxjs')
 
-const Deck = require('./Deck')
+const Deck = require('./deck')
 const { cardsToArray, errorToString, identifyTable } = require('../utils')
 
 class Dealer {

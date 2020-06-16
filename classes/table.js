@@ -1,5 +1,5 @@
-const Dealer = require('./Dealer')
-const Pot = require('./Pot')
+const Dealer = require('./dealer')
+const Pot = require('./pot')
 
 class Table {
   constructor ({ id, players, tournament }) {

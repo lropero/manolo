@@ -2,8 +2,8 @@ const arrayShuffle = require('array-shuffle')
 const gradient = require('gradient-string')
 const { chunk } = require('lodash')
 
-const Player = require('./Player')
-const Table = require('./Table')
+const Player = require('./player')
+const Table = require('./table')
 const { isValidPlayerName } = require('../utils')
 
 class Tournament {

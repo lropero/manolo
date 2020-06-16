@@ -14,6 +14,10 @@ _Check your privilege_
 $ npm install
 ```
 
+## Configuration
+
+Refer to [config/index.js](https://github.com/lropero/manolo/blob/master/config/index.js))
+
 ### Usage
 
 ```sh

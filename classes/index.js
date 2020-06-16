@@ -1,4 +1,4 @@
-const Tournament = require('./Tournament')
+const Tournament = require('./tournament')
 
 module.exports = {
   Tournament

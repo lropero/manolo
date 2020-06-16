@@ -1,6 +1,6 @@
 const arrayShuffle = require('array-shuffle')
 
-const Card = require('./Card')
+const Card = require('./card')
 
 class Deck {
   constructor () {
