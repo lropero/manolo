@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "husky": "^4.2.5",
-    "lint-staged": "^10.2.10",
+    "lint-staged": "^10.2.11",
     "prettier-standard": "^16.3.0",
     "rimraf": "^3.0.2"
   },
