@@ -17,7 +17,7 @@
     "gradient-string": "^1.2.0",
     "lodash": "^4.17.15",
     "pokersolver": "^2.1.3",
-    "rxjs": "^6.5.5",
+    "rxjs": "^6.6.0",
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
