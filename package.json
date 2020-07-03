@@ -1,7 +1,7 @@
 {
   "name": "manolo",
   "version": "0.1.0",
-  "description": "A poker Monte Carlo lab, data generator for Machine Learning.",
+  "description": "A poker (Texas hold'em) Monte Carlo lab, data generator for Machine Learning.",
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./npm-*.log && rimraf ./package-lock.json && rimraf ./node_modules && npm cache verify",
