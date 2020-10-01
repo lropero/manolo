@@ -6,15 +6,15 @@ _Check your privilege_
 
 ### Requires
 
-- Node v14.5.0
+- Node v14.13.0
 
 ### Installation
 
 ```sh
-$ npm install
+$ npm ci
 ```
 
-## Configuration
+### Configuration
 
 - Refer to [config/index.js](https://github.com/lropero/manolo/blob/master/config/index.js).
 

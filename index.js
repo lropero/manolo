@@ -13,9 +13,6 @@ const run = async ({ config, logger, playerNames }) => {
       playerNames
     })
     await tournament.run()
-    console.log(
-      "Hey, I'd like to know about your research, drop me an email :)"
-    )
   } catch (error) {
     logger(`${chalk.red(cross)} ${errorToString({ error })}`)
     if (error.stack) {
