@@ -17,21 +17,14 @@ class Player {
         amount = currentBet - committed
         if (amount === 0) {
           options = [3, 5]
-        } else if (
-          this.stack + committed <= currentBet ||
-          !activePlayers.filter(
-            player => !player.isAllIn && player.name !== this.name
-          ).length
-        ) {
+        } else if (this.stack + committed <= currentBet || !activePlayers.filter(player => !player.isAllIn && player.name !== this.name).length) {
           options = [2, 4]
         }
       }
       const random = options[Math.floor(Math.random() * options.length)]
       switch (random) {
         case 1:
-          return resolve(
-            `bet ${this.pay({ amount: Math.round(pot.count() / 2) })}`
-          )
+          return resolve(`bet ${this.pay({ amount: Math.round(pot.count() / 2) })}`)
         case 2:
           return resolve(`call ${this.pay({ amount })}`)
         case 3:
@@ -39,9 +32,7 @@ class Player {
         case 4:
           return resolve('fold')
         case 5:
-          return resolve(
-            `raise ${this.pay({ amount: currentBet * 2 - committed })}`
-          )
+          return resolve(`raise ${this.pay({ amount: currentBet * 2 - committed })}`)
       }
     })
   }
