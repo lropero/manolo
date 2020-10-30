@@ -6,7 +6,7 @@ _Check your privilege_
 
 ### Requires
 
-- Node v14.13.0
+- Node v14.15.0
 
 ### Installation
 
