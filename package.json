@@ -11,7 +11,7 @@
     "upgrade": "npx upgradeps -n"
   },
   "dependencies": {
-    "array-shuffle": "^1.0.1",
+    "array-shuffle": "^2.0.0",
     "chalk": "^4.1.0",
     "figures": "^3.2.0",
     "gradient-string": "^1.2.0",
@@ -21,8 +21,8 @@
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
-    "husky": "^4.3.0",
-    "lint-staged": "^10.5.0",
+    "husky": "^4.3.5",
+    "lint-staged": "^10.5.3",
     "prettier-standard": "^16.4.1",
     "rimraf": "^3.0.2"
   },
