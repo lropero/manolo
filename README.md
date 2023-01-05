@@ -1,12 +1,13 @@
 # manolo &middot; [![Project Status: Inactive – The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](https://www.repostatus.org/badges/latest/inactive.svg)](https://www.repostatus.org/#inactive)
 
-_Check your privilege_
+A poker (Texas hold'em) data generator for testing Reinforcement Learning algorithms.
 
 <img src="manolo.gif?raw=true" width="600">
 
 ### Requires
 
-- Node v14.15.4
+- [Node v18.12.1](https://nodejs.org/)
+- npm v9.2.0
 
 ### Installation
 
