@@ -109,9 +109,7 @@ class Dealer {
             case 'raise': {
               pot.addChips({ chips, playerName: player.name })
               currentBet = pot.getCommitted({ playerName: player.name })
-              logger(
-                identifyTable({ lastTableId, tableId }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`)
-              )
+              logger(identifyTable({ lastTableId, tableId }) + chalk.magenta(`${player.name}: raises to ${currentBet}${player.isAllIn ? ' and is all-in' : ''}`))
               playerRaised = true
               skipLast = true
               startAt = this.activePlayers.findIndex(p => p.name === player.name) + 1
@@ -193,23 +191,15 @@ class Dealer {
       chips = players[positions.smallBlind].pay({ amount: smallBlind })
       currentBet = chips
       pot.addChips({ chips, playerName: players[positions.smallBlind].name })
-      logger(
-        identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) +
-          chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`)
-      )
+      logger(identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) + chalk.gray(`${players[positions.smallBlind].name}: posts small blind ${chips}${players[positions.smallBlind].isAllIn ? ' and is all-in' : ''}`))
     }
     if (!players[positions.bigBlind].isAllIn) {
       chips = players[positions.bigBlind].pay({ amount: bigBlind })
       currentBet = chips > currentBet ? chips : currentBet
       pot.addChips({ chips, playerName: players[positions.bigBlind].name })
-      logger(
-        identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) +
-          chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`)
-      )
+      logger(identifyTable({ lastTableId: tables[tables.length - 1].id, tableId }) + chalk.gray(`${players[positions.bigBlind].name}: posts big blind ${chips}${players[positions.bigBlind].isAllIn ? ' and is all-in' : ''}`))
     }
-    if (
-      players.filter(player => player.name !== players[positions.smallBlind].name && player.name !== players[positions.bigBlind].name && !player.isAllIn).length
-    ) {
+    if (players.filter(player => player.name !== players[positions.smallBlind].name && player.name !== players[positions.bigBlind].name && !player.isAllIn).length) {
       currentBet = bigBlind
     } else if (players.length === 2 && (players[positions.smallBlind].isAllIn || players[positions.bigBlind].isAllIn)) {
       pot.normalize({
@@ -236,10 +226,7 @@ class Dealer {
           identifyTable({
             lastTableId: tables[tables.length - 1].id,
             tableId
-          }) +
-            chalk.yellow(
-              `*** ${i === 0 ? 'FLOP' : i === 1 ? 'TURN' : 'RIVER'} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').slice(1)}]`
-            )
+          }) + chalk.yellow(`*** ${i === 0 ? 'FLOP' : i === 1 ? 'TURN' : 'RIVER'} *** [${this.table.cards.reduce((cards, card) => cards + ' ' + card.reveal(), '').slice(1)}]`)
         )
         if (this.activePlayers.filter(player => !player.isAllIn).length > 1) {
           await this.bettingRound({

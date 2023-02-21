@@ -8,23 +8,26 @@
   "main": "index.js",
   "scripts": {
     "audit": "npx upgradeps -v",
-    "clean": "npx rimraf package-lock.json && npx rimraf node_modules",
-    "lint": "npx prettier-standard --lint",
+    "clean": "npx rimraf node_modules && npx rimraf package-lock.json",
+    "lint": "npx prettier --write . && npx standard --fix",
     "nuke": "npm run clean && npm cache verify && npm install",
+    "sort": "npx sort-package-json",
     "start": "node --max-old-space-size=4096 index.js"
   },
   "dependencies": {
-    "array-shuffle": "2.0.0",
-    "chalk": "4.1.2",
-    "figures": "3.2.0",
+    "array-shuffle": "3.0.0",
+    "chalk": "5.2.0",
+    "figures": "5.0.0",
     "gradient-string": "2.0.2",
     "lodash": "4.17.21",
     "pokersolver": "2.1.4",
     "rxjs": "7.8.0",
-    "strip-ansi": "6.0.1"
+    "strip-ansi": "7.0.1"
   },
   "devDependencies": {
-    "prettier-standard": "16.4.1",
-    "rimraf": "3.0.2"
+    "prettier": "2.8.4",
+    "rimraf": "4.1.2",
+    "standard": "17.0.0",
+    "upgradeps": "2.0.5"
   }
 }
