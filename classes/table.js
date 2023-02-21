@@ -1,5 +1,5 @@
-const Dealer = require('./dealer')
-const Pot = require('./pot')
+import Dealer from './dealer.js'
+import Pot from './pot.js'
 
 class Table {
   constructor ({ id, players, tournament }) {
@@ -39,4 +39,4 @@ class Table {
   }
 }
 
-module.exports = Table
+export default Table

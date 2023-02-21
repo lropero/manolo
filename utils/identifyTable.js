@@ -1,20 +1,20 @@
-const arrayShuffle = require('array-shuffle')
-const chalk = require('chalk')
+import arrayShuffle from 'array-shuffle'
+import chalk from 'chalk'
 
 const colors = arrayShuffle([
-  ['red', 'black'],
-  ['green', 'white'],
-  ['yellow', 'black'],
-  ['blue', 'white'],
-  ['magenta', 'black'],
-  ['cyan', 'black'],
-  ['white', 'black'],
-  ['gray', 'white']
+  ['Red', 'black'],
+  ['Green', 'white'],
+  ['Yellow', 'black'],
+  ['Blue', 'white'],
+  ['Magenta', 'black'],
+  ['Cyan', 'black'],
+  ['White', 'black'],
+  ['Gray', 'white']
 ])
 
 function identifyTable ({ lastTableId, tableId }) {
   const key = tableId % colors.length
-  return `${chalk.bgKeyword(colors[key][0]).keyword(colors[key][1])(tableId.toString().padStart(lastTableId.toString().length))} `
+  return `${chalk[`bg${colors[key][0]}`][colors[key][1]](tableId.toString().padStart(lastTableId.toString().length))} `
 }
 
-module.exports = identifyTable
+export default identifyTable

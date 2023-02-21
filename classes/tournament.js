@@ -1,10 +1,10 @@
-const arrayShuffle = require('array-shuffle')
-const gradient = require('gradient-string')
-const { chunk } = require('lodash')
+import _ from 'lodash'
+import arrayShuffle from 'array-shuffle'
+import gradient from 'gradient-string'
 
-const Player = require('./player')
-const Table = require('./table')
-const { isValidPlayerName } = require('../utils')
+import Player from './player.js'
+import Table from './table.js'
+import { isValidPlayerName } from '../utils/index.js'
 
 class Tournament {
   constructor ({ config, logger, players }) {
@@ -143,7 +143,7 @@ class Tournament {
   }
 
   seatPlayers ({ players }) {
-    let groups = chunk(arrayShuffle(players), this.config.playersPerTable)
+    let groups = _.chunk(arrayShuffle(players), this.config.playersPerTable)
     if (groups[groups.length - 1].length <= Math.floor(this.config.playersPerTable / 2) && groups[groups.length - 2]) {
       const temp = groups[groups.length - 2].concat(groups[groups.length - 1])
       const half = Math.ceil(temp.length / 2)
@@ -171,4 +171,4 @@ class Tournament {
   }
 }
 
-module.exports = Tournament
+export default Tournament

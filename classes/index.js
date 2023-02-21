@@ -1,5 +1,3 @@
-const Tournament = require('./tournament')
+import Tournament from './tournament.js'
 
-module.exports = {
-  Tournament
-}
+export { Tournament }

@@ -124,4 +124,4 @@ class Pot {
   }
 }
 
-module.exports = Pot
+export default Pot

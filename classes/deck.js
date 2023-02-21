@@ -1,6 +1,6 @@
-const arrayShuffle = require('array-shuffle')
+import arrayShuffle from 'array-shuffle'
 
-const Card = require('./card')
+import Card from './card.js'
 
 class Deck {
   constructor () {
@@ -29,4 +29,4 @@ class Deck {
   }
 }
 
-module.exports = Deck
+export default Deck

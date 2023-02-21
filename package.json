@@ -5,7 +5,7 @@
   "description": "A poker (Texas hold'em) data generator for testing Reinforcement Learning algorithms.",
   "license": "UNLICENSED",
   "author": "Luciano Ropero <lropero@gmail.com>",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
     "audit": "npx upgradeps -v",
     "clean": "npx rimraf node_modules && npx rimraf package-lock.json",

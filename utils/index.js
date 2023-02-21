@@ -1,11 +1,6 @@
-const cardsToArray = require('./cardsToArray')
-const errorToString = require('./errorToString')
-const identifyTable = require('./identifyTable')
-const isValidPlayerName = require('./isValidPlayerName')
+import cardsToArray from './cardsToArray.js'
+import errorToString from './errorToString.js'
+import identifyTable from './identifyTable.js'
+import isValidPlayerName from './isValidPlayerName.js'
 
-module.exports = {
-  cardsToArray,
-  errorToString,
-  identifyTable,
-  isValidPlayerName
-}
+export { cardsToArray, errorToString, identifyTable, isValidPlayerName }

@@ -1,8 +1,8 @@
-const stripAnsi = require('strip-ansi')
-const { chunk } = require('lodash')
+import _ from 'lodash'
+import stripAnsi from 'strip-ansi'
 
 function cardsToArray ({ cardsShown }) {
-  return chunk(
+  return _.chunk(
     stripAnsi(cardsShown).replace(/[\u2660\u2663\u2665\u2666]/g, suit => {
       switch (suit) {
         case '\u2660':
@@ -19,4 +19,4 @@ function cardsToArray ({ cardsShown }) {
   ).map(card => card[0] + card[1])
 }
 
-module.exports = cardsToArray
+export default cardsToArray

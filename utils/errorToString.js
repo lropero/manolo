@@ -7,4 +7,4 @@ function errorToString ({ error }) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-module.exports = errorToString
+export default errorToString

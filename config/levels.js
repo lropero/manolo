@@ -1,4 +1,4 @@
-module.exports = [
+export default [
   [5, 25, 50, 18], // ante, small blind, big blind, number of hands required to increase level
   [6, 30, 60, 18],
   [8, 40, 80, 18],

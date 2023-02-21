@@ -1,4 +1,4 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 
 class Card {
   constructor (rank, suit) {
@@ -54,4 +54,4 @@ class Card {
   }
 }
 
-module.exports = Card
+export default Card

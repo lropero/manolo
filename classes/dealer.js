@@ -1,10 +1,10 @@
-const chalk = require('chalk')
-const { Hand } = require('pokersolver')
-const { catchError, concatMap } = require('rxjs/operators')
-const { empty, from, throwError } = require('rxjs')
+import chalk from 'chalk'
+import pokersolver from 'pokersolver'
+import { catchError, concatMap } from 'rxjs/operators'
+import { empty, from, throwError } from 'rxjs'
 
-const Deck = require('./deck')
-const { cardsToArray, errorToString, identifyTable } = require('../utils')
+import Deck from './deck.js'
+import { cardsToArray, errorToString, identifyTable } from '../utils/index.js'
 
 class Dealer {
   constructor ({ table, tournament }) {
@@ -242,7 +242,7 @@ class Dealer {
     const hands = {}
     await this.ringActivePlayers({
       fn: player => {
-        const hand = Hand.solve(cardsToArray({ cardsShown: player.showCards() }).concat(cardsToArray({ cardsShown: this.table.showCards() })))
+        const hand = pokersolver.Hand.solve(cardsToArray({ cardsShown: player.showCards() }).concat(cardsToArray({ cardsShown: this.table.showCards() })))
         logger(
           identifyTable({
             lastTableId: tables[tables.length - 1].id,
@@ -256,7 +256,7 @@ class Dealer {
       const handsPerPot = Object.keys(hands)
         .filter(playerName => playerNames.includes(playerName))
         .map(playerName => hands[playerName])
-      return Hand.winners(handsPerPot)
+      return pokersolver.Hand.winners(handsPerPot)
         .map(winner => {
           const cards = winner.cardPool
             .reduce((cards, card) => cards + ' ' + card.value + card.suit, '')
@@ -312,4 +312,4 @@ class Dealer {
   }
 }
 
-module.exports = Dealer
+export default Dealer

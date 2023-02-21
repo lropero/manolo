@@ -1,6 +1,6 @@
-const levels = require('./levels')
+import levels from './levels.js'
 
-module.exports = {
+export default {
   levels,
   numberOfPlayers: 135,
   playersPerTable: 9,

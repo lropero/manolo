@@ -1,9 +1,9 @@
-const chalk = require('chalk')
-const { cross } = require('figures')
+import chalk from 'chalk'
+import figures from 'figures'
 
-const config = require('./config')
-const { Tournament } = require('./classes')
-const { errorToString } = require('./utils')
+import config from './config/index.js'
+import { errorToString } from './utils/index.js'
+import { Tournament } from './classes/index.js'
 
 const run = async ({ config, logger, playerNames }) => {
   try {
@@ -14,7 +14,7 @@ const run = async ({ config, logger, playerNames }) => {
     })
     await tournament.run()
   } catch (error) {
-    logger(`${chalk.red(cross)} ${errorToString({ error })}`)
+    logger(`${chalk.red(figures.cross)} ${errorToString({ error })}`)
     if (error.stack) {
       logger(chalk.yellow(error.stack))
     }
