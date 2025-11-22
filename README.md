@@ -6,8 +6,8 @@ A poker (Texas hold'em) data generator for testing Reinforcement Learning algori
 
 ### Requires
 
-- [Node v18.14.1](https://nodejs.org/)
-- npm v9.5.0
+- [Node v24.11.1](https://nodejs.org/)
+- npm v11.6.3
 
 ### Installation
 
